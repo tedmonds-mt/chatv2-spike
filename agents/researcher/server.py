@@ -17,7 +17,7 @@ a2a_server = A2AServer(
     agent=researcher_agent,
     http_url=RUNTIME_URL,
     serve_at_root=True,
-    enable_a2a_compliant_streaming=False
+    enable_a2a_compliant_streaming=False,
 )
 
 app = FastAPI()
@@ -25,4 +25,3 @@ app.mount("/", a2a_server.to_fastapi_app())
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9000)
-
