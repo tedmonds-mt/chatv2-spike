@@ -1,0 +1,57 @@
+[project]
+name = "agent-tutorial"
+version = "0.1.0"
+description = "Simple tutorial showcasing Strands and AgentCore"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "a2a-sdk>=0.3.26",
+    "strands-agents>=1.35.0",
+]
+
+[tool.poe.tasks.build]
+help = "Runs the sync process"
+cmd = "uv sync"
+
+[tool.poe.tasks.app]
+help = "Runs the code"
+cmd = "uv run main.py"
+
+[tool.poe.tasks.tests]
+help = "Run the tests with coverage"
+cmd = "uv run pytest -vrrP --testdox --cov src tests"
+
+[tool.poe.tasks.formatter]
+help = "Formats files using the Ruff formatter"
+cmd = "uv run ruff format"
+
+[tool.poe.tasks.lint]
+help = "Checks linting using Ruff"
+cmd = "uv run ruff check --fix"
+
+[tool.poe.tasks.audit]
+help = "Audits dependencies for vulnerabilities"
+cmd = "uv run pip-audit"
+
+[tool.poe.tasks.scan]
+help = "Scans the application code for vulnerabilities"
+cmd = "uv run bandit -r src"
+
+[tool.poe.tasks.typing]
+help = "Pre-run checks on typing violations"
+cmd = "uv run mypy --explicit-package-bases src tests"
+
+[tool.poe.tasks.check]
+help = "Run all checks required pre-deployment"
+sequence = ["build", "tests", "lint", "audit", "scan", "typing"]
+
+[dependency-groups]
+dev = [
+    "bandit>=1.9.4",
+    "mypy>=1.20.1",
+    "pip-audit>=2.10.0",
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+    "pytest-testdox>=3.1.0",
+    "ruff>=0.15.10",
+]
