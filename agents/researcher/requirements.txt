@@ -1,2 +1,4 @@
 strands-agents
-a2a-python
+a2a-sdk
+fastapi
+uvicorn
