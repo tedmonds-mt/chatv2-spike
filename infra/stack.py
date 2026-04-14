@@ -25,7 +25,11 @@ class AgentCoreStack(Stack):
                 "agents/writer"
             ),
             environment_variables={
-                "RESEARCHER_RUNTIME_ID": researcher_runtime.agent_runtime_id
+                "RESEARCHER_RUNTIME_ARN": Stack.of(self).format_arn(
+                    service="bedrock-agentcore",
+                    resource="runtime",
+                    resource_name=researcher_runtime.agent_runtime_id
+                )
             },
         )
 
