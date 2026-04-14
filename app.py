@@ -6,4 +6,3 @@ from infra.stack import AgentCoreStack
 app = cdk.App()
 AgentCoreStack(app, "StrandsA2ATutorialStack")
 app.synth()
-

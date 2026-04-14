@@ -1,6 +1,7 @@
 import os
 from strands import Agent, tool
-import sys
+from strands.multiagent.a2a.executor import StrandsA2AExecutor
+from bedrock_agentcore.runtime import serve_a2a
 import boto3
 import json
 
@@ -13,16 +14,30 @@ def ask_researcher(topic: str) -> str:
     if not RESEARCHER_RUNTIME_ID:
         return "Error: Researcher runtime ID not configured."
 
-    agent_core_client = boto3.client("bedrock-agentcore")
+    client = boto3.client("bedrock-agentcore")
 
-    payload = json.dumps({"prompt": f"Provide a detailed factual survey of {topic}"})
+    a2a_payload = {
+        "jsonrpc": "2.0",
+        "id": "req-001",
+        "method": "message/send",
+        "params": {
+            "message": {
+                "role": "user",
+                "parts": [{"kind": "text", "text": f"Research {topic}"}],
+            }
+        },
+    }
 
-    response = agent_core_client.invoke_agent_runtime(
-        agent_runtime_arn=RESEARCHER_RUNTIME_ID, payload=payload
+    response = client.invoke_agent_runtime(
+        agent_runtime_arn=RESEARCHER_RUNTIME_ID, payload=json.dumps(a2a_payload)
     )
 
-    response_body = response["payload"].read().decode("utf-8")
-    return json.loads(response_body).get("result", response_body)
+    response_body = json.loads(response["payload"].read().decode("utf-8"))
+
+    try:
+        return response_body["result"]["message"]["parts"][0]["text"]
+    except (KeyError, IndexError):
+        return str(response_body)
 
 
 writer_agent = Agent(
@@ -32,9 +47,4 @@ writer_agent = Agent(
 )
 
 if __name__ == "__main__":
-    query = (
-        sys.argv[1]
-        if len(sys.argv) > 1
-        else "The key principles behind the A2A Protocol."
-    )
-    print(writer_agent(query))
+    serve_a2a(StrandsA2AExecutor(writer_agent))

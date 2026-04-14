@@ -28,3 +28,5 @@ class AgentCoreStack(Stack):
                 "RESEARCHER_RUNTIME_ID": researcher_runtime.agent_runtime_id
             },
         )
+
+        researcher_runtime.grant_invoke(writer_runtime)
