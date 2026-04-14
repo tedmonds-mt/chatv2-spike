@@ -53,11 +53,11 @@ sequence = ["lint", "audit", "scan", "typing"]
 
 [tool.poe.tasks.bootstrap]
 help = "Bootstraps the AWS CDK (run once in region/account)"
-cmd = "uv run cdk bootstrap"
+cmd = "cdk bootstrap"
 
 [tool.poe.tasks.deploy]
 help = "Deploy to AWS with CDK"
-cmd = "uv run cdk deploy"
+cmd = "cdk deploy"
 
 [dependency-groups]
 dev = [
