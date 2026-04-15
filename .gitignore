@@ -94,5 +94,7 @@ dmypy.json
 **/terraform.tfstate
 cdk.out
 
+**/.DS_Store
+
 
 
