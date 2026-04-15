@@ -14,7 +14,9 @@ class AgentCoreStack(Stack):
             agent_runtime_artifact=agentcore_alpha.AgentRuntimeArtifact.from_asset(
                 "agents/researcher"
             ),
-            environment_variables={"PORT": "9000"},
+            environment_variables={
+                "PORT": "9000"
+            }
         )
 
         writer_runtime = agentcore_alpha.Runtime(
@@ -25,6 +27,7 @@ class AgentCoreStack(Stack):
                 "agents/writer"
             ),
             environment_variables={
+                "PORT": "9000",
                 "RESEARCHER_RUNTIME_ARN": Stack.of(self).format_arn(
                     service="bedrock-agentcore",
                     resource="runtime",

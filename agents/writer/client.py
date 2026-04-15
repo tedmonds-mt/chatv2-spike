@@ -32,7 +32,7 @@ def ask_researcher(topic: str) -> str:
     encoded_payload = json.dumps(a2a_payload).encode("utf-8")
 
     response = client.invoke_agent_runtime(
-        agent_runtime_arn=RESEARCHER_RUNTIME_ARN, payload=encoded_payload
+        agentRuntimeArn=RESEARCHER_RUNTIME_ARN, payload=encoded_payload
     )
 
     response_body = json.loads(response["payload"].read().decode("utf-8"))
@@ -51,9 +51,9 @@ writer_agent = Agent(
                    "those facts. "
                    "Make sure there is at least one spurious and outrageous exaggeration."
                    "Overuse CAPITAL LETTERS AND EXCLAMATIONS!"),
-
     tools=[ask_researcher],
+    model="bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0"
 )
 
 if __name__ == "__main__":
-    serve_a2a(StrandsA2AExecutor(writer_agent))
+    serve_a2a(StrandsA2AExecutor(writer_agent), host="0.0.0.0", port=9000)

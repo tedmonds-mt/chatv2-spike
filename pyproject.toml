@@ -21,7 +21,7 @@ cmd = "uv sync"
 
 [tool.poe.tasks.app]
 help = "Runs the code"
-cmd = "uv run main.py"
+cmd = "uv run invoke.py"
 
 [tool.poe.tasks.tests]
 help = "Run the tests with coverage"
