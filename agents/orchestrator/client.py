@@ -14,16 +14,19 @@ REGION = os.environ.get("AWS_REGION", "eu-west-2")
 def get_managed_prompt() -> str:
     """Retrieves the central prompt from Bedrock Prompt Management."""
     if not PROMPT_ARN:
-        return (
-            "You are a technical writer. Use the 'ask_researcher' tool to gather facts."
-        )
+        return "You are a technical orchestrator. Use the 'ask_researcher' tool to gather facts."
     bedrock_client = boto3.client("bedrock-agent", region_name=REGION)
-    suffix = ("\n\nCRITICAL INSTRUCTION: If the 'ask_researcher' tool returns a CRITICAL SYSTEM ERROR, "
-              "you must stop immediately and output the exact error text to the user. Do not write the "
-              "article.")
-    return bedrock_client.get_prompt(promptIdentifier=PROMPT_ARN)["variants"][0][
-        "templateConfiguration"
-    ]["text"]["text"] + suffix
+    suffix = (
+        "\n\nCRITICAL INSTRUCTION: If the 'ask_researcher' tool returns a CRITICAL SYSTEM ERROR, "
+        "you must stop immediately and output the exact error text to the user. Do not write the "
+        "article."
+    )
+    return (
+        bedrock_client.get_prompt(promptIdentifier=PROMPT_ARN)["variants"][0][
+            "templateConfiguration"
+        ]["text"]["text"]
+        + suffix
+    )
 
 
 @tool

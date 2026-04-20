@@ -37,6 +37,7 @@ dependencies = [
     { name = "boto3-stubs" },
     { name = "constructs" },
     { name = "fastapi" },
+    { name = "ruff" },
     { name = "strands-agents" },
 ]
 
@@ -60,6 +61,7 @@ requires-dist = [
     { name = "boto3-stubs", specifier = ">=1.42.89" },
     { name = "constructs", specifier = ">=10.6.0" },
     { name = "fastapi", specifier = ">=0.135.3" },
+    { name = "ruff", specifier = ">=0.15.10" },
     { name = "strands-agents", specifier = ">=1.35.0" },
 ]
 

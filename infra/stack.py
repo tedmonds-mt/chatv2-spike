@@ -18,12 +18,12 @@ class AgentCoreStack(Stack):
             protocol_configuration=agentcore_alpha.ProtocolType.A2A,
         )
 
-        writer_runtime = agentcore_alpha.Runtime(
+        orchestrator_runtime = agentcore_alpha.Runtime(
             self,
-            "WriterRuntime",
-            runtime_name="WriterA2AClient",
+            "OrchestratorRuntime",
+            runtime_name="OrchestratorA2AClient",
             agent_runtime_artifact=agentcore_alpha.AgentRuntimeArtifact.from_asset(
-                "agents/writer"
+                "agents/orchestrator"
             ),
             environment_variables={
                 "PORT": "9000",
@@ -36,7 +36,7 @@ class AgentCoreStack(Stack):
             },
         )
 
-        researcher_runtime.grant_invoke(writer_runtime)
+        researcher_runtime.grant_invoke(orchestrator_runtime)
 
         model_invoke_policy = iam.PolicyStatement(
             actions=["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
@@ -47,9 +47,9 @@ class AgentCoreStack(Stack):
         )
 
         researcher_runtime.role.add_to_principal_policy(model_invoke_policy)
-        writer_runtime.role.add_to_principal_policy(model_invoke_policy)
+        orchestrator_runtime.role.add_to_principal_policy(model_invoke_policy)
 
-        writer_runtime.role.add_to_principal_policy(
+        orchestrator_runtime.role.add_to_principal_policy(
             iam.PolicyStatement(
                 actions=["bedrock:GetPrompt"],
                 resources=["*"],  # Allow it to retrieve your managed prompt ARN
