@@ -15,7 +15,7 @@ def get_managed_prompt() -> str:
     """Retrieves the central prompt from Bedrock Prompt Management."""
     if not PROMPT_ARN:
         return (
-            "You are a technical writer. Use the 'ask_researcher' tool to gather facts."
+            "You are a technical orchestrator. Use the 'ask_researcher' tool to gather facts."
         )
     bedrock_client = boto3.client("bedrock-agent", region_name=REGION)
     suffix = ("\n\nCRITICAL INSTRUCTION: If the 'ask_researcher' tool returns a CRITICAL SYSTEM ERROR, "
