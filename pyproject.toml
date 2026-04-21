@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "a2a-sdk>=0.3.26",
     "aws-cdk-aws-bedrock-agentcore-alpha>=2.249.0a0",
+    "aws-cdk-aws-lambda-python-alpha>=2.250.0a0",
     "aws-cdk-lib>=2.249.0",
     "bedrock-agentcore[a2a]>=1.6.2",
     "boto3-stubs>=1.42.89",

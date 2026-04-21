@@ -21,7 +21,16 @@ BUCKET_NAME = f"{BUCKET_ID.lower()}-{SUFFIX}"
 
 
 class AgentCoreStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(
+        self,
+        scope: Construct,
+        construct_id: str,
+        cognito_domain: str,
+        cognito_client: str,
+        cognito_secret: str,
+        mcp_url: str,
+        **kwargs,
+    ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         researcher_runtime = agentcore_alpha.Runtime(
@@ -49,6 +58,10 @@ class AgentCoreStack(Stack):
                     resource="runtime",
                     resource_name=researcher_runtime.agent_runtime_id,
                 ),
+                "TOKEN_URL": cognito_domain,
+                "CLIENT_ID": cognito_client,
+                "CLIENT_SECRET": cognito_secret,
+                "MCP_URL": mcp_url,
             },
         )
 
