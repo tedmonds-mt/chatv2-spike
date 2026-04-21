@@ -1,10 +1,11 @@
-import os
-from strands import Agent, tool
-from bedrock_agentcore.runtime import BedrockAgentCoreApp
-import boto3
-import uuid
 import json
+import os
+import uuid
+
+import boto3
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from botocore.exceptions import ClientError
+from strands import Agent, tool
 
 RESEARCHER_RUNTIME_ARN = os.environ.get("RESEARCHER_RUNTIME_ARN")
 PROMPT_ARN = "arn:aws:bedrock:eu-west-2:281868401169:prompt/YBB8Q6KWHP:1"
@@ -83,7 +84,7 @@ def ask_researcher(topic: str) -> str | None:
         return f"CRITICAL SYSTEM ERROR. {type(e).__name__}: {str(e)}"
 
 
-WRITER_SYSTEM_PROMPT = get_managed_prompt()
+ORCHESTRATOR_SYSTEM_PROMPT = get_managed_prompt()
 
 app = BedrockAgentCoreApp()
 
@@ -91,14 +92,14 @@ app = BedrockAgentCoreApp()
 @app.entrypoint
 def invoke(payload):
     user_input = payload.get("prompt", "")
-    writer_agent = Agent(
-        name="WriterAgent",
-        system_prompt=WRITER_SYSTEM_PROMPT,
+    orchestrator_agent = Agent(
+        name="OrchestratorAgent",
+        system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
         tools=[ask_researcher],
         model="eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
-        trace_attributes={"service.name": "WriterAgent", "deployment": "dev"},
+        trace_attributes={"service.name": "OrchestratorAgent", "deployment": "dev"},
     )
-    result = writer_agent(user_input)
+    result = orchestrator_agent(user_input)
     return {"result": str(result)}
 
 

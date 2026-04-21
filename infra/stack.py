@@ -1,7 +1,23 @@
+import string
+from random import choices
+
 from aws_cdk import Stack
-import aws_cdk.aws_bedrock_agentcore_alpha as agentcore_alpha
+from aws_cdk import (
+    aws_bedrock_agentcore_alpha as agentcore_alpha,
+)
+from aws_cdk import (
+    aws_iam as iam,
+)
+from aws_cdk import (
+    aws_s3 as s3,
+)
 from constructs import Construct
-from aws_cdk import aws_iam as iam
+
+length = 8
+SUFFIX = "".join(choices(string.ascii_letters + string.digits, k=length)).lower()
+
+BUCKET_ID = "TestBucketForChatV2GDS"
+BUCKET_NAME = f"{BUCKET_ID.lower()}-{SUFFIX}"
 
 
 class AgentCoreStack(Stack):
@@ -55,3 +71,5 @@ class AgentCoreStack(Stack):
                 resources=["*"],  # Allow it to retrieve your managed prompt ARN
             )
         )
+
+        s3.Bucket(self, BUCKET_ID, bucket_name=BUCKET_NAME)

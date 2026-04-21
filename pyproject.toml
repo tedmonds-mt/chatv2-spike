@@ -16,6 +16,10 @@ dependencies = [
     "strands-agents>=1.35.0",
 ]
 
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B104", "B311"]
+
 [tool.poe.tasks.build]
 help = "Runs the sync process"
 cmd = "uv sync"
@@ -24,9 +28,9 @@ cmd = "uv sync"
 help = "Runs the code"
 cmd = "uv run invoke.py"
 
-[tool.poe.tasks.tests]
+[tool.poe.tasks.test]
 help = "Run the tests with coverage"
-cmd = "uv run pytest -vrrP --testdox --cov src tests"
+cmd = "uv run pytest -vrrP --testdox --cov agents infra tests"
 
 [tool.poe.tasks.formatter]
 help = "Formats files using the Ruff formatter"
@@ -55,6 +59,10 @@ sequence = ["lint", "audit", "scan", "typing"]
 [tool.poe.tasks.bootstrap]
 help = "Bootstraps the AWS CDK (run once in region/account)"
 cmd = "cdk bootstrap"
+
+[tool.poe.tasks.synth]
+help = "Generate the CF Stacks into the .out file."
+cmd = "cdk synth"
 
 [tool.poe.tasks.deploy]
 help = "Deploy to AWS with CDK"
