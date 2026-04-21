@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from botocore.exceptions import ClientError
 
-from tools.search_gov_uk.tool import SemanticSearch
+from tools.search_gov_uk.handler import SemanticSearch
 
 
 @pytest.fixture
@@ -15,8 +15,8 @@ def embedded_query():
 @pytest.mark.describe("SemanticSearch")
 class TestSemanticSearch:
     @pytest.mark.it("formats valid hits into SearchResult objects")
-    @patch("tools.search_gov_uk.tool.SemanticSearch.embed_text")
-    @patch("tools.search_gov_uk.tool.SemanticSearch.get_connection")
+    @patch("tools.search_gov_uk.handler.SemanticSearch.embed_text")
+    @patch("tools.search_gov_uk.handler.SemanticSearch.get_connection")
     def test_search_gov_uk_formats_results(self, mock_get_connection, mock_embed_text):
         # GIVEN
         #   A search client that returns valid OpenSearch hits
@@ -53,8 +53,8 @@ class TestSemanticSearch:
         assert results[0].title == "Some Guidance Title"
 
     @pytest.mark.it("raises an error when the OpenSearch cluster connection fails")
-    @patch("tools.search_gov_uk.tool.SemanticSearch.embed_text")
-    @patch("tools.search_gov_uk.tool.SemanticSearch.get_connection")
+    @patch("tools.search_gov_uk.handler.SemanticSearch.embed_text")
+    @patch("tools.search_gov_uk.handler.SemanticSearch.get_connection")
     def test_search_gov_uk_handles_malformed_cluster(
         self, mock_get_connection, mock_embed_text
     ):
@@ -71,8 +71,8 @@ class TestSemanticSearch:
             SemanticSearch.search_gov_uk("query")
 
     @pytest.mark.it("skips hits that are missing required fields")
-    @patch("tools.search_gov_uk.tool.SemanticSearch.embed_text")
-    @patch("tools.search_gov_uk.tool.SemanticSearch.get_connection")
+    @patch("tools.search_gov_uk.handler.SemanticSearch.embed_text")
+    @patch("tools.search_gov_uk.handler.SemanticSearch.get_connection")
     def test_search_gov_uk_skips_malformed_results(
         self, mock_get_connection, mock_embed_text
     ):
@@ -160,10 +160,10 @@ class TestSemanticSearch:
             SemanticSearch.get_secret("my_secret")
 
     @pytest.mark.it("creates and caches a new OpenSearch connection if none exists")
-    @patch("tools.search_gov_uk.tool.OpenSearch")
-    @patch("tools.search_gov_uk.tool.SemanticSearch.get_secret")
+    @patch("tools.search_gov_uk.handler.OpenSearch")
+    @patch("tools.search_gov_uk.handler.SemanticSearch.get_secret")
     @patch(
-        "tools.search_gov_uk.tool.SemanticSearch.connections", {}
+        "tools.search_gov_uk.handler.SemanticSearch.connections", {}
     )  # Start with empty cache
     def test_gets_new_connection(self, mock_get_secret, mock_opensearch):
         # GIVEN
@@ -189,7 +189,9 @@ class TestSemanticSearch:
         assert SemanticSearch.connections["new_conn"] == mock_opensearch_instance
 
     @pytest.mark.it("uses an existing connection if one exists")
-    @patch("tools.search_gov_uk.tool.SemanticSearch.connections", {"existing": "value"})
+    @patch(
+        "tools.search_gov_uk.handler.SemanticSearch.connections", {"existing": "value"}
+    )
     def test_uses_existing_connection(self):
         # GIVEN
         #  There is an existing connection
@@ -203,7 +205,7 @@ class TestSemanticSearch:
         "produces an error when a connection does not have the required fields"
     )
     @patch("opensearchpy.OpenSearch")
-    @patch("tools.search_gov_uk.tool.SemanticSearch.get_secret")
+    @patch("tools.search_gov_uk.handler.SemanticSearch.get_secret")
     def test_catches_malformed_connection(self, mock_get_secret, mock_opensearch):
         # GIVEN
         #   Connection parameters missing a password

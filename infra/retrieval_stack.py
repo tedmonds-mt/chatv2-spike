@@ -1,6 +1,9 @@
+from aws_cdk import Duration, Stack
+from aws_cdk import aws_bedrock_agentcore_alpha as agentcore
+from aws_cdk import aws_iam as iam
+from aws_cdk import aws_lambda as lambda_
 from aws_cdk.aws_bedrock_agentcore_alpha import SchemaDefinitionType
 from constructs import Construct
-from aws_cdk import Stack, aws_iam as iam, aws_lambda as lambda_, Duration, aws_bedrock_agentcore_alpha as agentcore
 
 
 class RetrievalStack(Stack):
@@ -32,7 +35,7 @@ class RetrievalStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_13,
             handler="handler.handler",
             role=retrieval_role,
-            code=lambda_.Code.from_asset("lambdas/retrieval"),
+            code=lambda_.Code.from_asset("tools/search_gov_uk"),
             timeout=Duration.seconds(30),
             environment={
                 "MY_ENV_VAR": "foo"
@@ -57,8 +60,8 @@ class RetrievalStack(Stack):
             tool_schema=agentcore.ToolSchema.from_inline(
                 [
                     agentcore.ToolDefinition(
-                        name="SearchKnowledgeBase",
-                        description="Search knowledge base",
+                        name="searchGovUk",
+                        description="Search GOV.UK knowledge base",
                         input_schema=agentcore.SchemaDefinition(
                             type=SchemaDefinitionType.OBJECT,
                             properties={
@@ -68,7 +71,7 @@ class RetrievalStack(Stack):
                                 ),
                                 "top_k": agentcore.SchemaDefinition(
                                     type=SchemaDefinitionType.INTEGER,
-                                    description="the top k results"
+                                    description="the top k results - default 5"
                                 )
                             },
                             required=["query"]

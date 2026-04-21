@@ -15,32 +15,6 @@ from pydantic import BaseModel
 logging.basicConfig(level=logging.INFO)
 
 
-def get_secret(secret_name: str) -> dict[str, str]:
-    """
-    Get secret from AWS Secrets Manager
-
-    Args:
-        secret_name (str): The name of the secret to get
-
-    Returns:
-        dict: Dictionary of secret keys and values
-
-    Raises:
-        ClientError: When connection to AWS fails, typically due to insufficient permissions.
-    """
-    session = boto3.session.Session()
-    client = session.client(
-        service_name="secretsmanager",
-        region_name="eu-west-2",
-    )
-    try:
-        get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-    except ClientError as e:
-        logging.error(f"Accessing secret {secret_name} failed. Error: {e}")
-        raise e
-    return json.loads(get_secret_value_response["SecretString"])
-
-
 class SearchResult(BaseModel):
     url: str
     score: float
@@ -51,88 +25,11 @@ class SearchResult(BaseModel):
     html_content: str
 
 
-def semantic_search(search_query: str) -> list[SearchResult]:
-    try:
-        opensearch_config = get_secret("GdsChat")
-        opensearch_url = opensearch_config["url"]
-        opensearch_username = opensearch_config["username"]
-        opensearch_password = opensearch_config["password"]
-        index_name = "govuk_chat_chunked_content"
-
-        try:
-            search_client = OpenSearch(
-                hosts=[opensearch_url],
-                http_auth=(
-                    opensearch_username,
-                    opensearch_password,
-                ),
-            )
-        except TypeError:
-            logging.error(
-                "The credentials required to connect to OpenSearch are missing from Secrets Manager or incorrect."
-            )
-            raise
-
-        bedrock = boto3.client("bedrock-runtime", region_name="eu-west-1")
-
-        try:
-            embedding_response = bedrock.invoke_model(
-                modelId="amazon.titan-embed-text-v2:0",
-                contentType="application/json",
-                accept="application/json",
-                body=json.dumps({"inputText": search_query}),
-            )
-        except NoCredentialsError:
-            logging.error("Check you have authenticated with AWS in this console")
-            raise
-
-        response_body = json.loads(embedding_response["body"].read())
-
-        try:
-            search_response = search_client.search(
-                index=index_name,
-                body={
-                    "size": 5,
-                    "query": {
-                        "knn": {
-                            "titan_embedding": {
-                                "vector": response_body["embedding"],
-                                "k": 5,
-                            }
-                        }
-                    },
-                    "_source": {"exclude": ["titan_embedding"]},
-                },
-            )
-        except ConnectionError:
-            logging.error(
-                "OpenSearch has failed to connect. Ensure the environment variables are set correctly."
-            )
-            raise
-        except OpenSearchException:
-            logging.error(
-                "OpenSearch connected but did not return a result. The request may be malformed."
-            )
-            raise
-
-        results = []
-        for hit in search_response["hits"]["hits"]:
-            result = hit["_source"]
-            result["url"] = f"https://www.gov.uk{result['exact_path']}"
-            result["score"] = hit["_score"]
-            results.append(SearchResult(**result))
-
-        return results
-    except Exception as e:
-        logging.error(e)
-        raise
-
-
 class SemanticSearch:
     connections = {}
 
     @classmethod
-    def search_gov_uk(cls, search_query: str) -> list[SearchResult]:
+    def search_gov_uk(cls, search_query: str, top_k: int = 5) -> list[SearchResult]:
         try:
             search_client = cls.get_connection("GdsChat")
             index_name = "govuk_chat_chunked_content"
@@ -148,7 +45,7 @@ class SemanticSearch:
                             "knn": {
                                 "titan_embedding": {
                                     "vector": search_query_embedded,
-                                    "k": 5,
+                                    "k": top_k,
                                 }
                             }
                         },
@@ -274,11 +171,11 @@ def lambda_handler(event, context):
 
     if tool_name == "searchGovUk":
         search_query = event.get("query")
-
+        top_k = event.get("top_k", 5)
         if not search_query:
             raise KeyError("The field 'query' must be passed in the event object")
 
-        results = semantic_search(search_query)
+        results = SemanticSearch.search_gov_uk(search_query, top_k)
 
         return [r.model_dump() for r in results]
     else:

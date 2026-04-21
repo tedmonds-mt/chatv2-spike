@@ -67,7 +67,7 @@ cmd = "cdk synth"
 
 [tool.poe.tasks.deploy]
 help = "Deploy to AWS with CDK"
-cmd = "cdk deploy"
+cmd = "cdk deploy --all"
 
 [dependency-groups]
 dev = [
