@@ -18,6 +18,10 @@ dependencies = [
     "strands-agents>=1.35.0",
 ]
 
+[tool.pytest.ini_options]
+norecursedirs = ["cdk.out", ".venv", "node_modules"]
+pythonpath = ["."]
+
 [tool.bandit]
 exclude_dirs = ["tests"]
 skips = ["B104", "B311"]
