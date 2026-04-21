@@ -1,7 +1,14 @@
 from aws_cdk import Stack
-import aws_cdk.aws_bedrock_agentcore_alpha as agentcore_alpha
 from constructs import Construct
-from aws_cdk import aws_iam as iam
+from aws_cdk import aws_iam as iam, aws_s3 as s3, aws_bedrock_agentcore_alpha as agentcore_alpha
+from random import choices
+import string
+
+length = 8
+SUFFIX = ''.join(choices(string.ascii_letters + string.digits, k=length)).lower()
+
+BUCKET_ID = "TestBucketForChatV2GDS"
+BUCKET_NAME = f"{BUCKET_ID.lower()}-{SUFFIX}"
 
 
 class AgentCoreStack(Stack):
@@ -18,12 +25,12 @@ class AgentCoreStack(Stack):
             protocol_configuration=agentcore_alpha.ProtocolType.A2A,
         )
 
-        orchestrator_runtime = agentcore_alpha.Runtime(
+        writer_runtime = agentcore_alpha.Runtime(
             self,
-            "OrchestratorRuntime",
-            runtime_name="OrchestratorA2AClient",
+            "WriterRuntime",
+            runtime_name="WriterA2AClient",
             agent_runtime_artifact=agentcore_alpha.AgentRuntimeArtifact.from_asset(
-                "agents/orchestrator"
+                "agents/writer"
             ),
             environment_variables={
                 "PORT": "9000",
@@ -36,7 +43,7 @@ class AgentCoreStack(Stack):
             },
         )
 
-        researcher_runtime.grant_invoke(orchestrator_runtime)
+        researcher_runtime.grant_invoke(writer_runtime)
 
         model_invoke_policy = iam.PolicyStatement(
             actions=["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
@@ -47,11 +54,14 @@ class AgentCoreStack(Stack):
         )
 
         researcher_runtime.role.add_to_principal_policy(model_invoke_policy)
-        orchestrator_runtime.role.add_to_principal_policy(model_invoke_policy)
+        writer_runtime.role.add_to_principal_policy(model_invoke_policy)
 
-        orchestrator_runtime.role.add_to_principal_policy(
+        writer_runtime.role.add_to_principal_policy(
             iam.PolicyStatement(
                 actions=["bedrock:GetPrompt"],
                 resources=["*"],  # Allow it to retrieve your managed prompt ARN
             )
         )
+
+        s3.Bucket(self, BUCKET_ID, bucket_name=BUCKET_NAME)
+
