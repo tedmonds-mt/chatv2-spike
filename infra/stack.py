@@ -41,6 +41,13 @@ class AgentCoreStack(Stack):
                 "agents/researcher"
             ),
             protocol_configuration=agentcore_alpha.ProtocolType.A2A,
+            environment_variables={
+                "AWS_REGION": Stack.of(self).region,
+                "TOKEN_URL": cognito_domain,
+                "CLIENT_ID": cognito_client,
+                "CLIENT_SECRET": cognito_secret,
+                "MCP_URL": mcp_url,
+            },
         )
 
         orchestrator_runtime = agentcore_alpha.Runtime(
@@ -81,7 +88,14 @@ class AgentCoreStack(Stack):
         orchestrator_runtime.role.add_to_principal_policy(
             iam.PolicyStatement(
                 actions=["bedrock:GetPrompt"],
-                resources=["*"],  # Allow it to retrieve your managed prompt ARN
+                resources=["*"],
+            )
+        )
+
+        researcher_runtime.role.add_to_principal_policy(
+            iam.PolicyStatement(
+                actions=["bedrock:GetPrompt"],
+                resources=["*"],
             )
         )
 
