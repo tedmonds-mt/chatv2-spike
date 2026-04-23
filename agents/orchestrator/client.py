@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 from strands import Agent, tool
 
 RESEARCHER_RUNTIME_ARN = os.environ.get("RESEARCHER_RUNTIME_ARN")
-PROMPT_ARN = "arn:aws:bedrock:eu-west-2:281868401169:prompt/YBB8Q6KWHP:1"
+PROMPT_ARN = "arn:aws:bedrock:eu-west-2:715195480427:prompt/WIA053R63J"
 REGION = os.environ.get("AWS_REGION", "eu-west-2")
 
 
