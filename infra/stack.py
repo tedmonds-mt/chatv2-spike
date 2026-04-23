@@ -21,7 +21,16 @@ BUCKET_NAME = f"{BUCKET_ID.lower()}-{SUFFIX}"
 
 
 class AgentCoreStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(
+        self,
+        scope: Construct,
+        construct_id: str,
+        cognito_domain: str,
+        cognito_client: str,
+        cognito_secret: str,
+        mcp_url: str,
+        **kwargs,
+    ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         researcher_runtime = agentcore_alpha.Runtime(
@@ -32,6 +41,13 @@ class AgentCoreStack(Stack):
                 "agents/researcher"
             ),
             protocol_configuration=agentcore_alpha.ProtocolType.A2A,
+            environment_variables={
+                "AWS_REGION": Stack.of(self).region,
+                "TOKEN_URL": cognito_domain,
+                "CLIENT_ID": cognito_client,
+                "CLIENT_SECRET": cognito_secret,
+                "MCP_URL": mcp_url,
+            },
         )
 
         orchestrator_runtime = agentcore_alpha.Runtime(
@@ -49,6 +65,10 @@ class AgentCoreStack(Stack):
                     resource="runtime",
                     resource_name=researcher_runtime.agent_runtime_id,
                 ),
+                "TOKEN_URL": cognito_domain,
+                "CLIENT_ID": cognito_client,
+                "CLIENT_SECRET": cognito_secret,
+                "MCP_URL": mcp_url,
             },
         )
 
@@ -68,7 +88,14 @@ class AgentCoreStack(Stack):
         orchestrator_runtime.role.add_to_principal_policy(
             iam.PolicyStatement(
                 actions=["bedrock:GetPrompt"],
-                resources=["*"],  # Allow it to retrieve your managed prompt ARN
+                resources=["*"],
+            )
+        )
+
+        researcher_runtime.role.add_to_principal_policy(
+            iam.PolicyStatement(
+                actions=["bedrock:GetPrompt"],
+                resources=["*"],
             )
         )
 

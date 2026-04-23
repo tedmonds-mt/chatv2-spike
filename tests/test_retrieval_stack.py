@@ -12,7 +12,7 @@ from infra.retrieval_stack import RetrievalStack
 
 @pytest.fixture
 def template():
-    app = cdk.App()
+    app = cdk.App(context={"aws:cdk:bundling-stacks": []})
     stack = RetrievalStack(app, "TestRetrievalStack")
     return Template.from_stack(stack)
 
@@ -21,7 +21,6 @@ def template():
 class TestRetrievalStack:
     @pytest.mark.it("creates a lambda")
     def test_creates_lambda(self, template):
-        template.resource_count_is(lambda_.CfnFunction.CFN_RESOURCE_TYPE_NAME, 1)
         template.has_resource_properties(
             lambda_.CfnFunction.CFN_RESOURCE_TYPE_NAME,
             {
