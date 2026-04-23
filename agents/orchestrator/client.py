@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import sys
 import uuid
 
 import boto3
@@ -10,6 +12,12 @@ from mcp.client.streamable_http import streamable_http_client
 from mcp.shared._httpx_utils import create_mcp_http_client
 from strands import Agent, tool
 from strands.tools.mcp import MCPClient
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
 
 RESEARCHER_RUNTIME_ARN = os.environ.get("RESEARCHER_RUNTIME_ARN")
 PROMPT_ARN = "arn:aws:bedrock:eu-west-2:281868401169:prompt/YBB8Q6KWHP:1"
@@ -42,6 +50,7 @@ MCP_URL = os.environ.get("MCP_URL")
 @tool
 def ask_researcher(topic: str) -> str | None:
     """Delegates deep research to the researcher agent via Bedrock AgentCore"""
+    logging.info("Called ask_researcher")
     if not RESEARCHER_RUNTIME_ARN:
         return "Error: Researcher runtime ARN not configured."
 
@@ -64,13 +73,16 @@ def ask_researcher(topic: str) -> str | None:
 
     try:
         encoded_payload = json.dumps(a2a_payload).encode("utf-8")
-
+        logging.info(f"Sending {topic} to Bedrock AgentCore")
         response = client.invoke_agent_runtime(
             agentRuntimeArn=RESEARCHER_RUNTIME_ARN, payload=encoded_payload
         )
 
+        logging.info(f"A2A response: {json.dumps(response)}")
+
         response_body = json.loads(response["response"].read().decode("utf-8"))
         if "error" in response_body:
+            logging.error(f"A2A error: {json.dumps(response_body['error'])}")
             return (
                 "CRITICAL SYSTEM ERROR. YOU MUST STOP AND OUTPUT THIS EXACT TEXT: "
                 f"{json.dumps(response_body['error'])}"
@@ -81,6 +93,7 @@ def ask_researcher(topic: str) -> str | None:
             return message["content"][0]["text"]
         elif "parts" in message:
             return message["parts"][0]["text"]
+        logging.info(f"A2A message: {message}")
         return str(message)
     except (KeyError, IndexError) as e:
         print(f"The research tool threw a Key or Index Error, {e}")
@@ -127,7 +140,7 @@ def invoke(payload):
         mcp_tools = streamable_http_mcp_client.list_tools_sync()
         orchestrator_agent = Agent(
             name="OrchestratorAgent",
-            system_prompt="Use the searchGovUk tool to search gov uk to answer the user's question",
+            system_prompt="Use the ask_researcher tool to search gov uk to answer the user's question",
             tools=mcp_tools + [ask_researcher],
             model="eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
             trace_attributes={"service.name": "OrchestratorAgent", "deployment": "dev"},

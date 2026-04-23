@@ -1,3 +1,4 @@
+aws-opentelemetry-distro>=0.10.0
 strands-agents[a2a]
 bedrock-agentcore[a2a]
 boto3
