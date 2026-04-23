@@ -1,44 +1,27 @@
 import boto3
 import json
+import logging
+import uuid
 
-WRITER_RUNTIME_ARN = "arn:aws:bedrock-agentcore:eu-west-2:281868401169:runtime/WriterA2AClient-eO3j7LFNX6"
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
-
-def main():
-    print("🤖 Welcome to the AgentCore Interactive CLI")
-    print("Type 'exit' or 'quit' to stop.\n")
-
-    client = boto3.client("bedrock-agentcore")
-
-    while True:
-        try:
-            topic = input("Enter a topic for the Writer Agent: ").strip()
-
-            if topic.lower() in ["exit", "quit"]:
-                print("Goodbye!")
-                break
-            if not topic:
-                continue
-
-            print("\n⏳ Delegating task to Writer Agent...")
-
-            payload = {"prompt": f"The topic is: {topic}"}
-            response = client.invoke_agent_runtime(
-                agentRuntimeArn=WRITER_RUNTIME_ARN,
-                payload=json.dumps(payload).encode("utf-8"),
-            )
-
-            response_body = json.loads(response["response"].read().decode("utf-8"))
-
-            print("\n--- Final Output ---")
-            print(response_body.get("result", response_body))
-            print("-" * 40 + "\n")
-        except KeyboardInterrupt:
-            print("\nGoodbye!")
-            break
-        except Exception as e:
-            print(f"\n❌ Error invoking agent: {e}\n")
+client = boto3.client("bedrock-agentcore")
+session_id = f"user1-session-{uuid.uuid4()}"
 
 
-if __name__ == "__main__":
-    main()
+WRITER_RUNTIME_ARN = "arn:aws:bedrock-agentcore:eu-west-1:715195480427:runtime/OrchestratorA2AClient-Kx1U9g59j8"
+
+
+def invoke_agent(message: str, history: list):
+    logger.info('Calling agent runtime')
+    payload = {"prompt": message}
+    response = client.invoke_agent_runtime(
+        runtimeSessionId=session_id,
+        agentRuntimeArn=WRITER_RUNTIME_ARN,
+        payload=json.dumps(payload).encode("utf-8"),
+    )
+    response_body = json.loads(response["response"].read().decode("utf-8"))
+    return response_body.get("result", response_body)
+
+

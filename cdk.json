@@ -1,3 +1,4 @@
 {
-  "app": "uv run app.py"
+  "app": "uv run app.py",
+  "progress": "events"
 }
