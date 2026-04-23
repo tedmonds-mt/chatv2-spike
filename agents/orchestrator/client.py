@@ -23,8 +23,17 @@ def get_managed_prompt() -> str:
 
 
 @tool
-def ask_researcher(topic: str) -> str | None:
-    """Delegates deep research to the researcher agent via Bedrock AgentCore"""
+def complex_search(user_input: str) -> str | None:
+    """
+    Delegates complex queries to the researcher agent via Bedrock AgentCore
+
+    Args:
+        user_input (str): The user's input to the orchestrator, unchanged.
+
+    Returns:
+        str|None: The response from the researcher agent.
+
+    """
     if not RESEARCHER_RUNTIME_ARN:
         return "Error: Researcher runtime ARN not configured."
 
@@ -40,7 +49,7 @@ def ask_researcher(topic: str) -> str | None:
             "message": {
                 "messageId": str(uuid.uuid4()),
                 "role": "user",
-                "parts": [{"kind": "text", "text": f"Research {topic}"}],
+                "parts": [{"kind": "text", "text": user_input}],
             }
         },
     }
@@ -87,7 +96,7 @@ def invoke(payload):
     orchestrator_agent = Agent(
         name="OrchestratorAgent",
         system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
-        tools=[ask_researcher],
+        tools=[complex_search],
         model="eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
         trace_attributes={"service.name": "OrchestratorAgent", "deployment": "dev"},
     )

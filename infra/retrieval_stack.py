@@ -1,6 +1,12 @@
 from aws_cdk.aws_bedrock_agentcore_alpha import SchemaDefinitionType
 from constructs import Construct
-from aws_cdk import Stack, aws_iam as iam, aws_lambda as lambda_, Duration, aws_bedrock_agentcore_alpha as agentcore
+from aws_cdk import (
+    Stack,
+    aws_iam as iam,
+    aws_lambda as lambda_,
+    Duration,
+    aws_bedrock_agentcore_alpha as agentcore,
+)
 
 
 class RetrievalStack(Stack):
@@ -10,19 +16,16 @@ class RetrievalStack(Stack):
         retrieval_role = iam.Role(
             self,
             "RetrievalRole",
-            assumed_by=iam.ServicePrincipal('lambda.amazonaws.com'),
+            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
             managed_policies=[
                 iam.ManagedPolicy.from_aws_managed_policy_name(
-                    'service-role/AWSLambdaBasicExecutionRole'
+                    "service-role/AWSLambdaBasicExecutionRole"
                 )
-            ]
+            ],
         )
 
         retrieval_role.add_to_policy(
-            iam.PolicyStatement(
-                actions=['bedrock:InvokeModel'],
-                resources=['*']
-            )
+            iam.PolicyStatement(actions=["bedrock:InvokeModel"], resources=["*"])
         )
 
         retrieval_lambda = lambda_.Function(
@@ -34,9 +37,7 @@ class RetrievalStack(Stack):
             role=retrieval_role,
             code=lambda_.Code.from_asset("lambdas/retrieval"),
             timeout=Duration.seconds(30),
-            environment={
-                "MY_ENV_VAR": "foo"
-            }
+            environment={"MY_ENV_VAR": "foo"},
         )
 
         gateway = agentcore.Gateway(
@@ -46,8 +47,8 @@ class RetrievalStack(Stack):
             protocol_configuration=agentcore.McpProtocolConfiguration(
                 instructions="Use search_knowledge_base to retrieve relevant context.",
                 search_type=agentcore.McpGatewaySearchType.SEMANTIC,
-                supported_versions=[agentcore.MCPProtocolVersion.MCP_2025_06_18]
-            )
+                supported_versions=[agentcore.MCPProtocolVersion.MCP_2025_06_18],
+            ),
         )
 
         gateway.add_lambda_target(
@@ -63,18 +64,17 @@ class RetrievalStack(Stack):
                             type=SchemaDefinitionType.OBJECT,
                             properties={
                                 "query": agentcore.SchemaDefinition(
-                                type= SchemaDefinitionType.STRING,
-                                description ="the search query"
+                                    type=SchemaDefinitionType.STRING,
+                                    description="the search query",
                                 ),
                                 "top_k": agentcore.SchemaDefinition(
                                     type=SchemaDefinitionType.INTEGER,
-                                    description="the top k results"
-                                )
+                                    description="the top k results",
+                                ),
                             },
-                            required=["query"]
-                        )
+                            required=["query"],
+                        ),
                     )
                 ]
-            )
+            ),
         )
-
