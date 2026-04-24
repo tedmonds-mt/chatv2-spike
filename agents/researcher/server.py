@@ -4,10 +4,6 @@ import sys
 
 import boto3
 import requests
-from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig
-from bedrock_agentcore.memory.integrations.strands.session_manager import (
-    AgentCoreMemorySessionManager,
-)
 from bedrock_agentcore.runtime import serve_a2a
 from mcp.client.streamable_http import streamable_http_client
 from mcp.shared._httpx_utils import create_mcp_http_client
@@ -28,8 +24,6 @@ CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 GATEWAY_ID = os.environ.get("TOKEN_URL")
 TOKEN_URL = f"https://{GATEWAY_ID}.auth.eu-west-2.amazoncognito.com/oauth2/token"
 MCP_URL = os.environ.get("MCP_URL")
-
-MEMORY_ID = os.environ.get("MEMORY_ID")
 
 
 def get_managed_prompt() -> str:
@@ -64,15 +58,6 @@ streamable_http_mcp_client = MCPClient(
     lambda: create_streamable_http_transport(MCP_URL, mcp_access_token)
 )
 
-agentcore_memory_config = AgentCoreMemoryConfig(
-    memory_id=MEMORY_ID, session_id="placeholder-session", actor_id="researcher"
-)
-
-session_manager = AgentCoreMemorySessionManager(
-    agentcore_memory_config=agentcore_memory_config, region_name=REGION
-)
-
-
 researcher_agent = Agent(
     name="ResearcherAgent",
     description="A specialised research agent to answer complex questions about the UK government.",
@@ -80,7 +65,6 @@ researcher_agent = Agent(
     model="eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
     trace_attributes={"service.name": "ResearcherAgent", "protocol": "A2A"},
     tools=[streamable_http_mcp_client],
-    session_manager=session_manager,
 )
 
 if __name__ == "__main__":

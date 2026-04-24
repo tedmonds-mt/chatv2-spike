@@ -66,7 +66,6 @@ class AgentCoreStack(Stack):
                 "CLIENT_ID": cognito_client,
                 "CLIENT_SECRET": cognito_secret,
                 "MCP_URL": mcp_url,
-                "MEMORY_ID": shared_memory.memory_id,
             },
         )
 
@@ -114,17 +113,6 @@ class AgentCoreStack(Stack):
         )
 
         orchestrator_runtime.role.add_to_principal_policy(
-            iam.PolicyStatement(
-                actions=[
-                    "bedrock-agentcore:ListEvents",
-                    "bedrock-agentcore:CreateEvent",
-                    "bedrock-agentcore:RetrieveMemoryRecords",
-                ],
-                resources=[shared_memory.memory_arn],
-            )
-        )
-
-        researcher_runtime.role.add_to_principal_policy(
             iam.PolicyStatement(
                 actions=[
                     "bedrock-agentcore:ListEvents",
