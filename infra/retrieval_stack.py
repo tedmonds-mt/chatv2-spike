@@ -1,10 +1,13 @@
-import aws_cdk.aws_lambda as lambda_
-from aws_cdk import Duration, Stack
-from aws_cdk import aws_bedrock_agentcore_alpha as agentcore
-from aws_cdk import aws_iam as iam
 from aws_cdk.aws_bedrock_agentcore_alpha import SchemaDefinitionType
 from aws_cdk.aws_lambda_python_alpha import PythonFunction
 from constructs import Construct
+from aws_cdk import (
+    Stack,
+    aws_iam as iam,
+    aws_lambda as lambda_,
+    Duration,
+    aws_bedrock_agentcore_alpha as agentcore,
+)
 
 
 class RetrievalStack(Stack):
@@ -23,10 +26,6 @@ class RetrievalStack(Stack):
         )
 
         retrieval_role.add_to_policy(
-            iam.PolicyStatement(actions=["bedrock:InvokeModel"], resources=["*"])
-        )
-
-        retrieval_role.add_to_policy(
             iam.PolicyStatement(
                 actions=[
                     "bedrock:InvokeModel",
@@ -38,6 +37,9 @@ class RetrievalStack(Stack):
             )
         )
 
+        retrieval_role.add_to_policy(
+            iam.PolicyStatement(actions=["bedrock:InvokeModel"], resources=["*"])
+        )
         retrieval_role.add_to_policy(
             iam.PolicyStatement(
                 actions=[
@@ -72,6 +74,7 @@ class RetrievalStack(Stack):
                 supported_versions=[agentcore.MCPProtocolVersion.MCP_2025_06_18],
             ),
         )
+
         self.userPoolClient = gateway.user_pool_client.user_pool_client_id
         self.userPoolSecret = (
             gateway.user_pool_client.user_pool_client_secret.to_string()

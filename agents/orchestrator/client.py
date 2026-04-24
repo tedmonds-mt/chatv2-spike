@@ -20,7 +20,7 @@ logging.basicConfig(
 )
 
 RESEARCHER_RUNTIME_ARN = os.environ.get("RESEARCHER_RUNTIME_ARN")
-PROMPT_ARN = "arn:aws:bedrock:eu-west-2:281868401169:prompt/YBB8Q6KWHP:1"
+PROMPT_ARN = "arn:aws:bedrock:eu-west-2:715195480427:prompt/WIA053R63J"
 REGION = os.environ.get("AWS_REGION", "eu-west-2")
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
@@ -29,28 +29,29 @@ GATEWAY_ID = os.environ.get("TOKEN_URL")
 TOKEN_URL = f"https://{GATEWAY_ID}.auth.eu-west-2.amazoncognito.com/oauth2/token"
 MCP_URL = os.environ.get("MCP_URL")
 
-# def get_managed_prompt() -> str:
-#     """Retrieves the central prompt from Bedrock Prompt Management."""
-#     if not PROMPT_ARN:
-#         return "You are a technical orchestrator. Use the 'ask_researcher' tool to gather facts."
-#     bedrock_client = boto3.client("bedrock-agent", region_name=REGION)
-#     suffix = (
-#         "\n\nCRITICAL INSTRUCTION: If the 'ask_researcher' tool returns a CRITICAL SYSTEM ERROR, "
-#         "you must stop immediately and output the exact error text to the user. Do not write the "
-#         "article."
-#     )
-#     return (
-#         bedrock_client.get_prompt(promptIdentifier=PROMPT_ARN)["variants"][0][
-#             "templateConfiguration"
-#         ]["text"]["text"]
-#         + suffix
-#     )
+
+def get_managed_prompt() -> str:
+    """Retrieves the central prompt from Bedrock Prompt Management."""
+    if not PROMPT_ARN:
+        return "You are a technical orchestrator. Use the 'ask_researcher' tool to gather facts."
+    bedrock_client = boto3.client("bedrock-agent", region_name=REGION)
+    return bedrock_client.get_prompt(promptIdentifier=PROMPT_ARN)["variants"][0][
+        "templateConfiguration"
+    ]["text"]["text"]
 
 
 @tool
-def ask_researcher(topic: str) -> str | None:
-    """Delegates deep research to the researcher agent via Bedrock AgentCore"""
-    logging.info("Called ask_researcher")
+def complex_search(user_input: str) -> str | None:
+    """
+    Delegates complex queries to the researcher agent via Bedrock AgentCore
+
+    Args:
+        user_input (str): The user's input to the orchestrator, unchanged.
+
+    Returns:
+        str|None: The response from the researcher agent.
+
+    """
     if not RESEARCHER_RUNTIME_ARN:
         return "Error: Researcher runtime ARN not configured."
 
@@ -66,14 +67,14 @@ def ask_researcher(topic: str) -> str | None:
             "message": {
                 "messageId": str(uuid.uuid4()),
                 "role": "user",
-                "parts": [{"kind": "text", "text": f"Research {topic}"}],
+                "parts": [{"kind": "text", "text": user_input}],
             }
         },
     }
 
     try:
         encoded_payload = json.dumps(a2a_payload).encode("utf-8")
-        logging.info(f"Sending {topic} to Bedrock AgentCore")
+        logging.info(f"Sending {user_input} to Bedrock AgentCore")
         response = client.invoke_agent_runtime(
             agentRuntimeArn=RESEARCHER_RUNTIME_ARN, payload=encoded_payload
         )
@@ -122,7 +123,7 @@ def create_streamable_http_transport(mcp_url: str, access_token: str):
     return streamable_http_client(mcp_url, http_client=client)
 
 
-# ORCHESTRATOR_SYSTEM_PROMPT = get_managed_prompt()
+ORCHESTRATOR_SYSTEM_PROMPT = get_managed_prompt()
 
 app = BedrockAgentCoreApp()
 
@@ -134,14 +135,13 @@ streamable_http_mcp_client = MCPClient(
 
 @app.entrypoint
 def invoke(payload):
-
     user_input = payload.get("prompt", "")
     with streamable_http_mcp_client:
         mcp_tools = streamable_http_mcp_client.list_tools_sync()
         orchestrator_agent = Agent(
             name="OrchestratorAgent",
-            system_prompt="Use the ask_researcher tool to search gov uk to answer the user's question",
-            tools=mcp_tools + [ask_researcher],
+            system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
+            tools=mcp_tools + [complex_search],
             model="eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
             trace_attributes={"service.name": "OrchestratorAgent", "deployment": "dev"},
         )

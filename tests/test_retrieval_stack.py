@@ -1,7 +1,6 @@
 import re
 
 import aws_cdk as cdk
-import aws_cdk.assertions as assertions
 import aws_cdk.aws_bedrockagentcore as bedrockagentcore
 import aws_cdk.aws_iam as iam
 import aws_cdk.aws_lambda as lambda_
