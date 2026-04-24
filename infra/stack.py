@@ -33,6 +33,25 @@ class AgentCoreStack(Stack):
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+        memory_role = iam.Role(
+            self,
+            "MemoryExecutionRole",
+            assumed_by=iam.ServicePrincipal("bedrock-agentcore.amazonaws.com"),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "AmazonBedrockAgentCoreMemoryBedrockModelInferenceExecutionRolePolicy"
+                )
+            ],
+        )
+
+        shared_memory = agentcore_alpha.Memory(
+            self,
+            "SharedMemory",
+            memory_name="shared_memory",
+            description="Shared memory for Orchestrator and Researcher",
+            execution_role=memory_role,
+        )
+
         researcher_runtime = agentcore_alpha.Runtime(
             self,
             "ResearcherRuntime",
@@ -47,6 +66,7 @@ class AgentCoreStack(Stack):
                 "CLIENT_ID": cognito_client,
                 "CLIENT_SECRET": cognito_secret,
                 "MCP_URL": mcp_url,
+                "MEMORY_ID": shared_memory.memory_id,
             },
         )
 
@@ -69,6 +89,7 @@ class AgentCoreStack(Stack):
                 "CLIENT_ID": cognito_client,
                 "CLIENT_SECRET": cognito_secret,
                 "MCP_URL": mcp_url,
+                "MEMORY_ID": shared_memory.memory_id,
             },
         )
 
@@ -89,6 +110,28 @@ class AgentCoreStack(Stack):
             iam.PolicyStatement(
                 actions=["bedrock:GetPrompt"],
                 resources=["*"],
+            )
+        )
+
+        orchestrator_runtime.role.add_to_principal_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "bedrock-agentcore:ListEvents",
+                    "bedrock-agentcore:CreateEvent",
+                    "bedrock-agentcore:RetrieveMemoryRecords",
+                ],
+                resources=[shared_memory.memory_arn],
+            )
+        )
+
+        researcher_runtime.role.add_to_principal_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "bedrock-agentcore:ListEvents",
+                    "bedrock-agentcore:CreateEvent",
+                    "bedrock-agentcore:RetrieveMemoryRecords",
+                ],
+                resources=[shared_memory.memory_arn],
             )
         )
 

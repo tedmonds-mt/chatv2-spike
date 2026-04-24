@@ -14,7 +14,7 @@ WRITER_RUNTIME_ARN = "arn:aws:bedrock-agentcore:eu-west-2:715195480427:runtime/O
 
 
 def invoke_agent(message: str, history: list):
-    logger.info('Calling agent runtime')
+    logger.info("Calling agent runtime")
     payload = {"prompt": message}
     response = client.invoke_agent_runtime(
         runtimeSessionId=session_id,
@@ -24,5 +24,3 @@ def invoke_agent(message: str, history: list):
     response_body = json.loads(response["response"].read().decode("utf-8"))
     print("Response body: %s", json.dumps(response_body, indent=2))
     return response_body.get("result", json.dumps(response_body, indent=2))
-
-

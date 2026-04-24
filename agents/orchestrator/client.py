@@ -6,11 +6,15 @@ import uuid
 
 import boto3
 import requests
+from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig
+from bedrock_agentcore.memory.integrations.strands.session_manager import (
+    AgentCoreMemorySessionManager,
+)
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from botocore.exceptions import ClientError
 from mcp.client.streamable_http import streamable_http_client
 from mcp.shared._httpx_utils import create_mcp_http_client
-from strands import Agent, tool
+from strands import Agent, ToolContext, tool
 from strands.tools.mcp import MCPClient
 
 logging.basicConfig(
@@ -29,6 +33,8 @@ GATEWAY_ID = os.environ.get("TOKEN_URL")
 TOKEN_URL = f"https://{GATEWAY_ID}.auth.eu-west-2.amazoncognito.com/oauth2/token"
 MCP_URL = os.environ.get("MCP_URL")
 
+MEMORY_ID = os.environ.get("MEMORY_ID")
+
 
 def get_managed_prompt() -> str:
     """Retrieves the central prompt from Bedrock Prompt Management."""
@@ -40,8 +46,8 @@ def get_managed_prompt() -> str:
     ]["text"]["text"]
 
 
-@tool
-def complex_search(user_input: str) -> str | None:
+@tool(context=True)
+def complex_search(user_input: str, tool_context: ToolContext) -> str | None:
     """
     Delegates complex queries to the researcher agent via Bedrock AgentCore
 
@@ -59,9 +65,12 @@ def complex_search(user_input: str) -> str | None:
 
     response_body = None
 
+    user_id = tool_context.invocation_state.get("user_id", str(uuid.uuid4()))
+    session_id = tool_context.invocation_state.get("session_id", "default_session")
+
     a2a_payload = {
         "jsonrpc": "2.0",
-        "id": str(uuid.uuid4()),
+        "id": user_id,
         "method": "message/send",
         "params": {
             "message": {
@@ -76,7 +85,10 @@ def complex_search(user_input: str) -> str | None:
         encoded_payload = json.dumps(a2a_payload).encode("utf-8")
         logging.info(f"Sending {user_input} to Bedrock AgentCore")
         response = client.invoke_agent_runtime(
-            agentRuntimeArn=RESEARCHER_RUNTIME_ARN, payload=encoded_payload
+            agentRuntimeArn=RESEARCHER_RUNTIME_ARN,
+            runtimeUserId=user_id,
+            runtimeSessionId=session_id,
+            payload=encoded_payload,
         )
 
         logging.info(f"A2A response: {json.dumps(response)}")
@@ -134,7 +146,16 @@ streamable_http_mcp_client = MCPClient(
 
 
 @app.entrypoint
-def invoke(payload):
+def invoke(payload, context):
+    session_id = context.session_id
+    agentcore_memory_config = AgentCoreMemoryConfig(
+        memory_id=MEMORY_ID, session_id=session_id, actor_id="orchestrator"
+    )
+
+    session_manager = AgentCoreMemorySessionManager(
+        agentcore_memory_config=agentcore_memory_config, region_name=REGION
+    )
+
     user_input = payload.get("prompt", "")
     with streamable_http_mcp_client:
         mcp_tools = streamable_http_mcp_client.list_tools_sync()
@@ -143,6 +164,7 @@ def invoke(payload):
             system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
             tools=mcp_tools + [complex_search],
             model="eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            session_manager=session_manager,
             trace_attributes={"service.name": "OrchestratorAgent", "deployment": "dev"},
         )
         result = orchestrator_agent(user_input)
