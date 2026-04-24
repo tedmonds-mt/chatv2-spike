@@ -22,6 +22,7 @@ def invoke_agent(message: str, history: list):
         payload=json.dumps(payload).encode("utf-8"),
     )
     response_body = json.loads(response["response"].read().decode("utf-8"))
-    return response_body.get("result", response_body)
+    print("Response body: %s", json.dumps(response_body, indent=2))
+    return response_body.get("result", json.dumps(response_body, indent=2))
 
 
