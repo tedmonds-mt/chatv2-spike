@@ -10,7 +10,7 @@ client = boto3.client("bedrock-agentcore")
 session_id = f"user1-session-{uuid.uuid4()}"
 
 
-WRITER_RUNTIME_ARN = "arn:aws:bedrock-agentcore:eu-west-1:715195480427:runtime/OrchestratorA2AClient-Kx1U9g59j8"
+WRITER_RUNTIME_ARN = "arn:aws:bedrock-agentcore:eu-west-2:715195480427:runtime/OrchestratorA2AClient-LMMIPXBYzq"
 
 
 def invoke_agent(message: str, history: list):
