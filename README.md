@@ -35,7 +35,7 @@ poe deploy
 ```
 
 ### 2. Run the Application
-Start the interactive CLI to chat with the Writer Agent:
+Start the GUI to chat with the Orchestrator Agent:
 ```bash
 poe app
 ```

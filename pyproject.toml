@@ -33,7 +33,7 @@ cmd = "uv sync"
 
 [tool.poe.tasks.app]
 help = "Runs the code"
-cmd = "uv run invoke.py"
+cmd = "uv run viewer.py"
 
 [tool.poe.tasks.test]
 help = "Run the tests with coverage"
