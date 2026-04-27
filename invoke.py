@@ -1,8 +1,9 @@
-import boto3
 import json
 import logging
-import uuid
 import re
+import uuid
+
+import boto3
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -32,8 +33,9 @@ def extract_answer(full_response: str) -> str:
 
 
 def invoke_agent(message: str, history: list):
-    logger.info('Calling agent runtime')
+    logger.info("Calling agent runtime")
     payload = {"prompt": message}
+
     response = client.invoke_agent_runtime(
         runtimeSessionId=session_id,
         agentRuntimeArn=WRITER_RUNTIME_ARN,
@@ -41,8 +43,8 @@ def invoke_agent(message: str, history: list):
     )
     response_body = json.loads(response["response"].read().decode("utf-8"))
     print("Response body: %s", json.dumps(response_body, indent=2))
-    answer = extract_answer(response_body.get("result", json.dumps(response_body, indent=2)))
+    answer = extract_answer(
+        response_body.get("result", json.dumps(response_body, indent=2))
+    )
     print(answer)
     return answer
-
-

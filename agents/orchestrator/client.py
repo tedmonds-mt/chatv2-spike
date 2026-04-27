@@ -134,7 +134,7 @@ streamable_http_mcp_client = MCPClient(
 
 
 @app.entrypoint
-def invoke(payload):
+async def invoke(payload):
     user_input = payload.get("prompt", "")
     with streamable_http_mcp_client:
         mcp_tools = streamable_http_mcp_client.list_tools_sync()
@@ -145,8 +145,12 @@ def invoke(payload):
             model="eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
             trace_attributes={"service.name": "OrchestratorAgent", "deployment": "dev"},
         )
-        result = orchestrator_agent(user_input)
-    return {"result": str(result)}
+
+        stream = orchestrator_agent.stream_async(user_input)
+
+        async for event in stream:
+            if "data" in event and isinstance(event["data"], str):
+                yield event["data"]
 
 
 if __name__ == "__main__":
