@@ -17,7 +17,8 @@ WRITER_RUNTIME_ARN = "arn:aws:bedrock-agentcore:eu-west-2:715195480427:runtime/O
 
 def extract_answer(full_response: str) -> str:
     if "```json" in full_response:
-        pattern = r"```json\s*(\{.*?\})\s*```"
+        full_response = re.sub("\\n", "\n", full_response)
+        pattern = r"```json.{1,2}(\{.*?\}).{1,2}```"
         match = re.search(pattern, full_response, flags=re.DOTALL)
 
         if match:
@@ -40,11 +41,20 @@ def invoke_agent(message: str, history: list):
         runtimeSessionId=session_id,
         agentRuntimeArn=WRITER_RUNTIME_ARN,
         payload=json.dumps(payload).encode("utf-8"),
+        accept="text/event-stream",
     )
-    response_body = json.loads(response["response"].read().decode("utf-8"))
-    print("Response body: %s", json.dumps(response_body, indent=2))
-    answer = extract_answer(
-        response_body.get("result", json.dumps(response_body, indent=2))
-    )
-    print(answer)
-    return answer
+    full_response = ""
+    for line in response["response"].iter_lines():
+        if line:
+            decoded_line = line.decode("utf-8")
+            if decoded_line.startswith("data: "):
+                content = decoded_line[6:]
+
+                try:
+                    unquoted_content = json.loads(content)
+                    full_response += unquoted_content
+                except json.JSONDecodeError:
+                    full_response += content.strip()
+
+            extracted_answer = extract_answer(full_response)
+            yield extracted_answer
