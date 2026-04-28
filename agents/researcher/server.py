@@ -69,4 +69,8 @@ researcher_agent = Agent(
 )
 
 if __name__ == "__main__":
-    serve_a2a(StrandsA2AExecutor(researcher_agent), host="0.0.0.0", port=9000)
+    serve_a2a(
+        StrandsA2AExecutor(researcher_agent, enable_a2a_compliant_streaming=True),
+        host="0.0.0.0",
+        port=9000,
+    )
