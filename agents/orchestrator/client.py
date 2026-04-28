@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import uuid
+from typing import Any, AsyncGenerator
 from urllib.parse import quote
 
 import boto3
@@ -95,12 +96,13 @@ def create_message(*, role: Role = Role.user, text: str) -> Message:
 @tool
 async def complex_search(
     user_input: str,
-) -> (
-    None
+) -> AsyncGenerator[
+    str
     | Message
     | Task
-    | tuple[Task, TaskStatusUpdateEvent | TaskArtifactUpdateEvent | None]
-):
+    | tuple[Task, TaskStatusUpdateEvent | TaskArtifactUpdateEvent | None],
+    Any,
+]:
     """
     Delegates complex queries to the researcher agent via Bedrock AgentCore
     """
@@ -111,7 +113,7 @@ async def complex_search(
 
     session_id = str(uuid.uuid4())
     print(f"Generated session ID: {session_id}")
-
+    yield "Researcher is researching"
     headers = {
         "Authorization": f"Bearer {bearer_token}",
         "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": session_id,
@@ -123,7 +125,7 @@ async def complex_search(
 
         config = ClientConfig(
             httpx_client=httpx_client,
-            streaming=False,
+            streaming=True,
         )
         factory = ClientFactory(config)
         client = factory.create(agent_card)
@@ -133,7 +135,7 @@ async def complex_search(
         async for event in client.send_message(msg):
             if isinstance(event, Message):
                 logging.info(event.model_dump_json(exclude_none=True, indent=2))
-                return event
+                yield event
             elif isinstance(event, tuple) and len(event) == 2:
                 task, update_event = event
                 logging.info(
@@ -143,10 +145,10 @@ async def complex_search(
                     logging.info(
                         f"Update: {update_event.model_dump_json(exclude_none=True, indent=2)}"
                     )
-                return task
+                yield task
             else:
                 logging.info(f"Response: {str(event)}")
-                return event
+                yield event
 
 
 ORCHESTRATOR_SYSTEM_PROMPT = get_managed_prompt()

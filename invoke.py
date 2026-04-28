@@ -23,7 +23,12 @@ def extract_answer(full_response: str) -> str:
 
         if match:
             json_string = match.group(1)
-            data = json.loads(json_string)
+            try:
+                data = json.loads(json_string)
+            except json.JSONDecodeError:
+                data = {"answer": json_string.strip()}
+                print(data)
+
             return data.get("answer", full_response)
         else:
             return full_response
@@ -49,12 +54,20 @@ def invoke_agent(message: str, history: list):
             decoded_line = line.decode("utf-8")
             if decoded_line.startswith("data: "):
                 content = decoded_line[6:]
-
                 try:
                     unquoted_content = json.loads(content)
+                    if isinstance(unquoted_content, dict):
+                        if not unquoted_content.get("artifacts"):
+                            continue
+                        chunks = unquoted_content.get("artifacts")[0].get("parts", [])
+                        text_chunks = [
+                            str(c["text"]) for c in chunks if c["kind"] == "text"
+                        ]
+                        unquoted_content = "".join(text_chunks)
                     full_response += unquoted_content
                 except json.JSONDecodeError:
                     full_response += content.strip()
 
             extracted_answer = extract_answer(full_response)
             yield extracted_answer
+    print(full_response)
