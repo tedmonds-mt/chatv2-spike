@@ -15,32 +15,42 @@ session_id = f"user1-session-{uuid.uuid4()}"
 WRITER_RUNTIME_ARN = "arn:aws:bedrock-agentcore:eu-west-2:715195480427:runtime/OrchestratorA2AClient-LMMIPXBYzq"
 
 
-def extract_answer(full_response: str) -> str:
-    if "```json" in full_response:
-        full_response = re.sub("\\n", "\n", full_response)
-        pattern = r"```json.{1,2}(\{.*?\}).{1,2}```"
-        match = re.search(pattern, full_response, flags=re.DOTALL)
+class Extractor:
+    def __init__(self):
+        self.live_print = False
+        self.full_text = ""
+        self.full_response = ""
+        self.draft = ""
 
-        if match:
-            json_string = match.group(1)
-            try:
-                data = json.loads(json_string)
-            except json.JSONDecodeError:
-                data = {"answer": json_string.strip()}
-                print(data)
+    def extract_answer(self, response_chunk: str) -> str:
+        self.full_text += response_chunk
+        if "```json" in self.full_text:
+            self.live_print = True
+        if self.live_print:
+            pattern1 = r".*```json\s{0,2}"
+            self.draft = re.sub(pattern1, "", self.full_text, flags=re.DOTALL)
+            pattern2 = r'\{\s*"answer":\s*"'
+            self.draft = re.sub(pattern2, "", self.draft, flags=re.DOTALL)
+            pattern3 = r'\s*",.*'
+            self.draft = re.sub(pattern3, "", self.draft, flags=re.DOTALL)
 
-            return data.get("answer", full_response)
-        else:
-            return full_response
-    else:
-        match_exp = r"<classification_analysis>.*?</classification_analysis>"
-        processed = re.sub(match_exp, "", full_response, flags=re.DOTALL)
-        return processed.strip()
+        if re.search(r"```\W", self.full_text):
+            self.live_print = False
+
+        self.full_response = re.sub("\n{2,}", "\n", self.draft)
+        return self.full_response
+
+    @classmethod
+    def clean_newlines(cls, input_str):
+        assert isinstance(input_str, str)
+        return input_str.replace("\\n", "\n")
 
 
 def invoke_agent(message: str, history: list):
     logger.info("Calling agent runtime")
     payload = {"prompt": message}
+
+    extractor = Extractor()
 
     response = client.invoke_agent_runtime(
         runtimeSessionId=session_id,
@@ -48,7 +58,7 @@ def invoke_agent(message: str, history: list):
         payload=json.dumps(payload).encode("utf-8"),
         accept="text/event-stream",
     )
-    full_response = ""
+    response_chunk = ""
     for line in response["response"].iter_lines():
         if line:
             decoded_line = line.decode("utf-8")
@@ -64,10 +74,11 @@ def invoke_agent(message: str, history: list):
                             str(c["text"]) for c in chunks if c["kind"] == "text"
                         ]
                         unquoted_content = "".join(text_chunks)
-                    full_response += unquoted_content
+                    response_chunk = unquoted_content
                 except json.JSONDecodeError:
-                    full_response += content.strip()
+                    response_chunk = content.strip()
 
-            extracted_answer = extract_answer(full_response)
-            yield extracted_answer
-    print(full_response)
+            extracted_answer = extractor.extract_answer(response_chunk)
+            cleaned = Extractor.clean_newlines(extracted_answer)
+            yield cleaned
+    print(extractor.full_response)
