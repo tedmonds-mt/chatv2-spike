@@ -33,6 +33,20 @@ class Extractor:
             self.draft = re.sub(pattern2, "", self.draft, flags=re.DOTALL)
             pattern3 = r'\s*",.*'
             self.draft = re.sub(pattern3, "", self.draft, flags=re.DOTALL)
+        elif matches := re.findall(
+            r"(?s)<thinking>(.*?)(?:<\/thinking>|$)", self.full_text
+        ):
+            last_thought = matches[-1]
+            if counts := re.findall(r"(?s)<count>(\d)(?:<\/count>)", self.full_text):
+                last_count = 5 - int(counts[-1])
+            else:
+                last_count = 0
+
+            last_thought = re.sub(r"<count>\d</count>", "", last_thought)
+            last_thought = re.sub(r"<reward>[\d\.]+</reward>", "", last_thought)
+            last_thought = re.sub(r"</?reflection>", "", last_thought)
+
+            return f"<small><i>Thinking ({last_count}/5): {last_thought}</i></small>"
 
         if re.search(r"```\W", self.full_text):
             self.live_print = False
@@ -77,6 +91,7 @@ def invoke_agent(message: str, history: list):
                     response_chunk = unquoted_content
                 except json.JSONDecodeError:
                     response_chunk = content.strip()
+            print(response_chunk)
             extracted_answer = extractor.extract_answer(response_chunk)
             cleaned = Extractor.clean_newlines(extracted_answer)
             yield cleaned

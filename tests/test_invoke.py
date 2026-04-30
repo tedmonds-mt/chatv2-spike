@@ -103,8 +103,6 @@ dnl_expected = (
     "accurate, official information about government services.\n\nI can help you with questions about:\n"
 )
 
-thinking_chunk = "The "
-
 
 @pytest.mark.describe("invocation code")
 class TestInvokeExtractAnswer(object):
@@ -169,3 +167,46 @@ class TestInvokeExtractAnswer(object):
     )
     def test_simplify_newlines(self, input_str, expected_output):
         assert Extractor.clean_newlines(input_str) == expected_output
+
+    @pytest.mark.it("Thinking should be returned")
+    @pytest.mark.parametrize(
+        "input_str, expected_output",
+        [
+            (
+                "<thinking>Thought on one line</thinking>",
+                "<small><i>Thinking (0/5): Thought on one line</i></small>",
+            ),
+            (
+                "I am some preamble to be ignored<thinking>Thought on one line</thinking>",
+                "<small><i>Thinking (0/5): Thought on one line</i></small>",
+            ),
+            ("No thoughts head empty", ""),
+            ("I am in a thinking block with no opener</thinking>", ""),
+            (
+                "<thinking>\nI \n am \n a \n thought\n over multiple lines</thinking>",
+                "<small><i>Thinking (0/5): \nI \n am \n a \n thought\n over multiple lines</i></small>",
+            ),
+            (
+                "<thinking> First thought to be ignored</thinking><thinking>Return only the most recent thought</thinking>",
+                "<small><i>Thinking (0/5): Return only the most recent thought</i></small>",
+            ),
+            (
+                "<thinking>I am an unfinished thought",
+                "<small><i>Thinking (0/5): I am an unfinished thought</i></small>",
+            ),
+            (
+                '<thinking>Ignores if json answer</thinking>```json{"answer": "text',
+                "text",
+            ),
+            (
+                "<thinking>Thought with count<count>1</count></thinking>",
+                "<small><i>Thinking (4/5): Thought with count</i></small>",
+            ),
+            (
+                "<thinking>Remove reflection <reflection>tags</reflection></thinking>",
+                "<small><i>Thinking (0/5): Remove reflection tags</i></small>",
+            ),
+        ],
+    )
+    def test_shows_most_recent_thoughts(self, input_str, expected_output, extractor):
+        assert extractor.extract_answer(input_str) == expected_output
