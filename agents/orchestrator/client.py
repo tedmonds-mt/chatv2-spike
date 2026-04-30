@@ -175,12 +175,20 @@ async def invoke(payload):
         )
 
         stream = orchestrator_agent.stream_async(user_input)
-
+        previous_tool_response = ""
         async for event in stream:
             logging.info(f"Raw event: {event}")
             if tool_stream := event.get("tool_stream_event"):
                 if update := tool_stream.get("data"):
-                    yield update
+                    try:
+                        full_agent_response = update.artifacts.parts
+                        update.artifacts.parts = full_agent_response[
+                            len(previous_tool_response) :
+                        ]
+                        previous_tool_response = full_agent_response
+                        yield update
+                    except Exception:
+                        yield update
             elif "data" in event and isinstance(event["data"], str):
                 yield event["data"]
 

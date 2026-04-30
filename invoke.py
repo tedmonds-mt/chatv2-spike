@@ -33,8 +33,12 @@ class Extractor:
             self.draft = re.sub(pattern2, "", self.draft, flags=re.DOTALL)
             pattern3 = r'\s*",.*'
             self.draft = re.sub(pattern3, "", self.draft, flags=re.DOTALL)
+        elif "<answer_preparation>" in self.full_text:
+            return "<small><i>Writing answer...</i></small>"
+        elif "<research_summary>" in self.full_text:
+            return "<small><i>Summarising research...</i></small>"
         elif matches := re.findall(
-            r"(?s)<thinking>(.*?)(?:<\/thinking>|$)", self.full_text
+            r"(?s)<thinking>((?:(?!<thinking>).)*?)(?:<\/thinking>|$)", self.full_text
         ):
             last_thought = matches[-1]
             if counts := re.findall(r"(?s)<count>(\d)(?:<\/count>)", self.full_text):
@@ -47,6 +51,8 @@ class Extractor:
             last_thought = re.sub(r"</?reflection>", "", last_thought)
 
             return f"<small><i>Thinking ({last_count}/5): {last_thought}</i></small>"
+        else:
+            return "<small><i>Searching GOV.UK...</i></small>"
 
         if re.search(r"```\W", self.full_text):
             self.live_print = False

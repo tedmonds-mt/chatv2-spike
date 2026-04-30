@@ -180,8 +180,6 @@ class TestInvokeExtractAnswer(object):
                 "I am some preamble to be ignored<thinking>Thought on one line</thinking>",
                 "<small><i>Thinking (0/5): Thought on one line</i></small>",
             ),
-            ("No thoughts head empty", ""),
-            ("I am in a thinking block with no opener</thinking>", ""),
             (
                 "<thinking>\nI \n am \n a \n thought\n over multiple lines</thinking>",
                 "<small><i>Thinking (0/5): \nI \n am \n a \n thought\n over multiple lines</i></small>",
@@ -209,4 +207,41 @@ class TestInvokeExtractAnswer(object):
         ],
     )
     def test_shows_most_recent_thoughts(self, input_str, expected_output, extractor):
+        assert extractor.extract_answer(input_str) == expected_output
+
+    @pytest.mark.it("Thinking should be returned")
+    @pytest.mark.parametrize(
+        "input_str, expected_output",
+        [
+            (
+                "<random tag>Default response for random tag</random tag>",
+                "<small><i>Searching GOV.UK...</i></small>",
+            ),
+            (
+                "Default response for no tags",
+                "<small><i>Searching GOV.UK...</i></small>",
+            ),
+            (
+                "<research_summary>Shows summarising message</research_summary>ignoring additional content",
+                "<small><i>Summarising research...</i></small>",
+            ),
+            (
+                "<research_summary>Shows summarising message with open tag",
+                "<small><i>Summarising research...</i></small>",
+            ),
+            (
+                "<answer_preparation>Shows writing message</answer_preparation>",
+                "<small><i>Writing answer...</i></small>",
+            ),
+            (
+                "<answer_preparation>Shows writing message</answer_preparation><research_summary>ignoring this</research_summary>",
+                "<small><i>Writing answer...</i></small>",
+            ),
+            (
+                '<thinking>Ignores</thinking> <research_summary>all</research_summary> <answer_preparation>tags</answer_preparation> if json answer```json{"answer": "text',
+                "text",
+            ),
+        ],
+    )
+    def test_shows_hold_messages(self, input_str, expected_output, extractor):
         assert extractor.extract_answer(input_str) == expected_output
