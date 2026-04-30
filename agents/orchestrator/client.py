@@ -145,7 +145,7 @@ async def complex_search(
                     logging.info(
                         f"Update: {update_event.model_dump_json(exclude_none=True, indent=2)}"
                     )
-                yield task
+                    yield task
             else:
                 logging.info(f"Response: {str(event)}")
                 yield event
@@ -178,13 +178,11 @@ async def invoke(payload):
 
         async for event in stream:
             logging.info(f"Raw event: {event}")
-            if "data" in event and isinstance(event["data"], str):
+            if tool_stream := event.get("tool_stream_event"):
+                if update := tool_stream.get("data"):
+                    yield update
+            elif "data" in event and isinstance(event["data"], str):
                 yield event["data"]
-            if event.get("type") in ["tool_stream_event", "tool_yield"]:
-                yield event.get("data", "")
-            elif tool_stream := event.get("tool_stream_event"):
-                if isinstance(tool_stream, dict) and "data" in tool_stream:
-                    yield tool_stream["data"]
 
 
 if __name__ == "__main__":

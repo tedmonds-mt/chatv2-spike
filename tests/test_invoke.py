@@ -88,20 +88,22 @@ chunk4 = (
 )
 
 dnl = (
-    "the types of questions I can help with\n3. Encourage them to ask a question\n\nStructure:\n- Opening "
+    "the types of questions I can help with\n3. Encourage them to ask a question\n\nStructure:\\n- Opening "
     "sentence explaining I'm a government assistant\n- 2-3 bullets about what I help with\n- Call to action "
-    "inviting them to ask a question\n\nNo external sources needed as this is about my role.\n"
-    '</answer_preparation>\n\n```json\n{\n  "answer": "I\'m a UK government assistant that helps you find '
-    "accurate, official information about government services.\n\nI can help you with questions about:\n\n"
+    "inviting them to ask a question\\nNo external sources needed as this is about my role.\n"
+    '</answer_preparation>\n\\n```json\n{\n  "answer": "I\'m a UK government assistant that helps you find '
+    "accurate, official information about government services.\n\nI can help you with questions about:\n"
 )
 
 dnl_expected = (
-    "the types of questions I can help with\n3. Encourage them to ask a question\nStructure:\n- Opening "
+    "the types of questions I can help with\n3. Encourage them to ask a question\n\nStructure:\n- Opening "
     "sentence explaining I'm a government assistant\n- 2-3 bullets about what I help with\n- Call to action "
     "inviting them to ask a question\nNo external sources needed as this is about my role.\n"
-    '</answer_preparation>\n```json\n{\n  "answer": "I\'m a UK government assistant that helps you find '
-    "accurate, official information about government services.\nI can help you with questions about:\n"
+    '</answer_preparation>\n\n```json\n{\n  "answer": "I\'m a UK government assistant that helps you find '
+    "accurate, official information about government services.\n\nI can help you with questions about:\n"
 )
+
+thinking_chunk = "The "
 
 
 @pytest.mark.describe("invocation code")
@@ -141,26 +143,26 @@ class TestInvokeExtractAnswer(object):
     @pytest.mark.parametrize(
         "input_str, expected_output",
         [
-            # Case 1: Triple newlines reduced to one
-            ("Hello\n\n\nWorld", "Hello\nWorld"),
-            # Case 2: Double newlines reduced to one
-            ("Line 1\n\nLine 2", "Line 1\nLine 2"),
+            # Case 1: Correctly formatted newline left alone
+            ("Hello\\n\nWorld", "Hello\n\nWorld"),
+            # Case 2: escaped newline changed
+            ("Line 1\\nLine 2", "Line 1\nLine 2"),
             # Case 3: No change needed for single newlines
             ("Line 1\nLine 2\nLine 3", "Line 1\nLine 2\nLine 3"),
             # Case 4: Mixture of different counts
-            ("A\n\nB\n\n\n\nC\nD", "A\nB\nC\nD"),
+            ("A\\nB\\n\\nC\nD", "A\nB\n\nC\nD"),
             # Case 5: Empty string
             ("", ""),
             # Case 6: String with only newlines
-            ("\n\n\n\n", "\n"),
+            ("\\n\\n\\n", "\n\n\n"),
             # Case 7: Newlines at the start and end
-            ("\n\nStart\n\nEnd\n\n", "\nStart\nEnd\n"),
+            ("\\nStart\\nEnd\\n", "\nStart\nEnd\n"),
             # Case 8: No newlines at all
             ("Plain text", "Plain text"),
             # Case 9: realistic case
             (dnl, dnl_expected),
             (
-                "The State Pension age depends on when you were born.\n\n- the current State Pension age is 66 for people born on or after 6 October 1954\n- it will rise to 67 between April 2026 and April 2028 for people born on or after 6 April 1960\n- it will rise to 68 between April 2044 and April 2046 for people born on or after 6 April 1977\n\nYou can [check your exact State Pension age on GOV.UK](https://www.gov.uk/state-pension-age) by entering your date of birth.",
+                "The State Pension age depends on when you were born.\\n- the current State Pension age is 66 for people born on or after 6 October 1954\n- it will rise to 67 between April 2026 and April 2028 for people born on or after 6 April 1960\n- it will rise to 68 between April 2044 and April 2046 for people born on or after 6 April 1977\\nYou can [check your exact State Pension age on GOV.UK](https://www.gov.uk/state-pension-age) by entering your date of birth.",
                 "The State Pension age depends on when you were born.\n- the current State Pension age is 66 for people born on or after 6 October 1954\n- it will rise to 67 between April 2026 and April 2028 for people born on or after 6 April 1960\n- it will rise to 68 between April 2044 and April 2046 for people born on or after 6 April 1977\nYou can [check your exact State Pension age on GOV.UK](https://www.gov.uk/state-pension-age) by entering your date of birth.",
             ),
         ],

@@ -77,8 +77,6 @@ def invoke_agent(message: str, history: list):
                     response_chunk = unquoted_content
                 except json.JSONDecodeError:
                     response_chunk = content.strip()
-
             extracted_answer = extractor.extract_answer(response_chunk)
             cleaned = Extractor.clean_newlines(extracted_answer)
             yield cleaned
-    print(extractor.full_response)
