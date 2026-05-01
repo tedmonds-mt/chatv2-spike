@@ -1,13 +1,19 @@
+from aws_cdk import (
+    Duration,
+    Stack,
+)
+from aws_cdk import (
+    aws_bedrock_agentcore_alpha as agentcore,
+)
+from aws_cdk import (
+    aws_iam as iam,
+)
+from aws_cdk import (
+    aws_lambda as lambda_,
+)
 from aws_cdk.aws_bedrock_agentcore_alpha import SchemaDefinitionType
 from aws_cdk.aws_lambda_python_alpha import PythonFunction
 from constructs import Construct
-from aws_cdk import (
-    Stack,
-    aws_iam as iam,
-    aws_lambda as lambda_,
-    Duration,
-    aws_bedrock_agentcore_alpha as agentcore,
-)
 
 
 class RetrievalStack(Stack):
@@ -75,11 +81,11 @@ class RetrievalStack(Stack):
             ),
         )
 
-        self.userPoolClient = gateway.user_pool_client.user_pool_client_id
+        self.userPoolClient = gateway.user_pool_client.user_pool_client_id  # type: ignore
         self.userPoolSecret = (
-            gateway.user_pool_client.user_pool_client_secret.to_string()
+            gateway.user_pool_client.user_pool_client_secret.to_string()  # type: ignore
         )
-        self.userPoolDomain = gateway.user_pool_domain.domain_name
+        self.userPoolDomain = gateway.user_pool_domain.domain_name  # type: ignore
         self.gateway_url = gateway.gateway_url
 
         gateway.add_lambda_target(
