@@ -68,7 +68,6 @@ streamable_http_mcp_client = MCPClient(
     lambda: create_streamable_http_transport(MCP_URL, mcp_access_token)
 )
 
-
 researcher_agent = Agent(
     name="ResearcherAgent",
     description="A specialised research agent to answer complex questions about the UK government.",

@@ -18,6 +18,10 @@ from a2a.types import (
     TaskStatusUpdateEvent,
     TextPart,
 )
+from bedrock_agentcore.memory.integrations.strands.config import AgentCoreMemoryConfig
+from bedrock_agentcore.memory.integrations.strands.session_manager import (
+    AgentCoreMemorySessionManager,
+)
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from mcp.client.streamable_http import streamable_http_client
 from mcp.shared._httpx_utils import create_mcp_http_client
@@ -43,6 +47,7 @@ CLIENT_ID = get_env("CLIENT_ID")
 CLIENT_SECRET = get_env("CLIENT_SECRET")
 GATEWAY_ID = get_env("TOKEN_URL")
 MCP_URL = get_env("MCP_URL")
+MEMORY_ID = get_env("MEMORY_ID")
 REGION = os.environ.get("AWS_REGION", "eu-west-2")
 
 A2A_POOL_ID = get_env("A2A_POOL_ID")
@@ -169,7 +174,16 @@ streamable_http_mcp_client = MCPClient(
 
 
 @app.entrypoint
-async def invoke(payload):
+async def invoke(payload, context):
+    session_id = context.session_id
+    agentcore_memory_config = AgentCoreMemoryConfig(
+        memory_id=MEMORY_ID, session_id=session_id, actor_id="orchestrator"
+    )
+
+    session_manager = AgentCoreMemorySessionManager(
+        agentcore_memory_config=agentcore_memory_config, region_name=REGION
+    )
+
     user_input = payload.get("prompt", "")
     with streamable_http_mcp_client:
         mcp_tools = streamable_http_mcp_client.list_tools_sync()
@@ -178,6 +192,7 @@ async def invoke(payload):
             system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
             tools=mcp_tools + [complex_search],
             model="eu.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            session_manager=session_manager,
             trace_attributes={"service.name": "OrchestratorAgent", "deployment": "dev"},
         )
 
