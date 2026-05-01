@@ -34,7 +34,7 @@ class Extractor:
             pattern3 = r'\s*",.*'
             self.draft = re.sub(pattern3, "", self.draft, flags=re.DOTALL)
         elif "<answer_preparation>" in self.full_text:
-            return "<small><i>Writing answer...</i></small>"
+            return "<small><i>Planning answer...</i></small>"
         elif "<research_summary>" in self.full_text:
             return "<small><i>Summarising research...</i></small>"
         elif matches := re.findall(

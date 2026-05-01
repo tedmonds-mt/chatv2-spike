@@ -11,6 +11,6 @@ AgentCoreStack(
     cognito_domain=r.userPoolDomain,
     cognito_client=r.userPoolClient,
     cognito_secret=r.userPoolSecret,
-    mcp_url=r.gateway_url,
+    mcp_url=r.gateway_url,  # type: ignore
 )
 app.synth()

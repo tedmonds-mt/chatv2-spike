@@ -30,33 +30,39 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 
-RESEARCHER_RUNTIME_ARN = os.environ.get("RESEARCHER_RUNTIME_ARN")
-PROMPT_ARN = "arn:aws:bedrock:eu-west-2:715195480427:prompt/WIA053R63J"
+
+def get_env(key: str) -> str:
+    value = os.environ.get(key)
+    if not value:
+        raise ValueError(f"Environment variable '{key}' must be set")
+    return value
+
+
+RESEARCHER_RUNTIME_ARN = get_env("RESEARCHER_RUNTIME_ARN")
+CLIENT_ID = get_env("CLIENT_ID")
+CLIENT_SECRET = get_env("CLIENT_SECRET")
+GATEWAY_ID = get_env("TOKEN_URL")
+MCP_URL = get_env("MCP_URL")
 REGION = os.environ.get("AWS_REGION", "eu-west-2")
+
+A2A_POOL_ID = get_env("A2A_POOL_ID")
+A2A_POOL_CLIENT = get_env("A2A_POOL_CLIENT")
+A2A_POOL_SECRET = get_env("A2A_POOL_SECRET")
+A2A_DOMAIN_PREFIX = get_env("A2A_POOL_DOMAIN")
+
+TOKEN_URL = f"https://{GATEWAY_ID}.auth.{REGION}.amazoncognito.com/oauth2/token"
+A2A_POOL_URL = (
+    f"https://{A2A_DOMAIN_PREFIX}.auth.{REGION}.amazoncognito.com/oauth2/token"
+)
+
+PROMPT_ARN = "arn:aws:bedrock:eu-west-2:715195480427:prompt/WIA053R63J"
 session = boto3.Session(region_name=REGION)
-
-CLIENT_ID = os.environ.get("CLIENT_ID")
-CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
-GATEWAY_ID = os.environ.get("TOKEN_URL")
-TOKEN_URL = f"https://{GATEWAY_ID}.auth.eu-west-2.amazoncognito.com/oauth2/token"
-MCP_URL = os.environ.get("MCP_URL")
-
-A2A_POOL_ID = os.environ.get("A2A_POOL_ID")
-A2A_POOL_CLIENT = os.environ.get("A2A_POOL_CLIENT")
-A2A_POOL_SECRET = os.environ.get("A2A_POOL_SECRET")
-A2A_DOMAIN_PREFIX = os.environ.get("A2A_POOL_DOMAIN")
-if A2A_DOMAIN_PREFIX:
-    A2A_POOL_URL = (
-        f"https://{A2A_DOMAIN_PREFIX}.auth.{REGION}.amazoncognito.com/oauth2/token"
-    )
-else:
-    A2A_POOL_URL = None
 
 
 def get_managed_prompt() -> str:
     """Retrieves the central prompt from Bedrock Prompt Management."""
     if not PROMPT_ARN:
-        return "You are a technical orchestrator. Use the 'ask_researcher' tool to gather facts."
+        return "You are a technical orchestrator. Use the 'complex_search' tool to gather facts."
     bedrock_client = boto3.client("bedrock-agent", region_name=REGION)
     return bedrock_client.get_prompt(promptIdentifier=PROMPT_ARN)["variants"][0][
         "templateConfiguration"
@@ -64,6 +70,7 @@ def get_managed_prompt() -> str:
 
 
 def fetch_access_token(client_id, client_secret, token_url):
+    """Gets access token from cognito"""
     response = requests.post(
         token_url,
         data=f"grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}",

@@ -18,6 +18,7 @@ dependencies = [
     "opensearch-py>=3.1.0",
     "ruff>=0.15.10",
     "strands-agents>=1.35.0",
+    "types-requests>=2.33.0.20260408",
 ]
 
 [tool.pytest.ini_options]
