@@ -50,6 +50,12 @@ class AgentCoreStack(Stack):
             memory_name="shared_memory",
             description="Shared memory for Orchestrator and Researcher",
             execution_role=memory_role,
+            memory_strategies=[
+                agentcore_alpha.MemoryStrategy.using_semantic(
+                    namespaces="/strategies/{memoryStrategyId}/actions/{actionId}/sessions/{sessionId}",
+                    name="semantic",
+                )
+            ],
         )
 
         researcher_runtime = agentcore_alpha.Runtime(
