@@ -17,13 +17,23 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 
-PROMPT_ARN = "arn:aws:bedrock:eu-west-2:715195480427:prompt/1NNKU1PDXX"
+
+def get_env(key: str) -> str:
+    value = os.environ.get(key)
+    if not value:
+        raise ValueError(f"Environment variable '{key}' must be set")
+    return value
+
+
+CLIENT_ID = get_env("CLIENT_ID")
+CLIENT_SECRET = get_env("CLIENT_SECRET")
+GATEWAY_ID = get_env("TOKEN_URL")
+MCP_URL = get_env("MCP_URL")
 REGION = os.environ.get("AWS_REGION", "eu-west-2")
-CLIENT_ID = os.environ.get("CLIENT_ID")
-CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
-GATEWAY_ID = os.environ.get("TOKEN_URL")
+
 TOKEN_URL = f"https://{GATEWAY_ID}.auth.eu-west-2.amazoncognito.com/oauth2/token"
-MCP_URL = os.environ.get("MCP_URL")
+
+PROMPT_ARN = "arn:aws:bedrock:eu-west-2:715195480427:prompt/1NNKU1PDXX"
 
 
 def get_managed_prompt() -> str:
@@ -68,4 +78,8 @@ researcher_agent = Agent(
 )
 
 if __name__ == "__main__":
-    serve_a2a(StrandsA2AExecutor(researcher_agent), host="0.0.0.0", port=9000)
+    serve_a2a(
+        StrandsA2AExecutor(researcher_agent, enable_a2a_compliant_streaming=True),
+        host="0.0.0.0",
+        port=9000,
+    )

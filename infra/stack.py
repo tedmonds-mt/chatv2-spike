@@ -1,20 +1,17 @@
-import string
-from random import choices
-
 from aws_cdk import Stack
 from aws_cdk import (
     aws_bedrock_agentcore_alpha as agentcore_alpha,
 )
 from aws_cdk import (
-    aws_iam as iam,
+    aws_cognito as cognito,
 )
 from aws_cdk import (
-    aws_s3 as s3,
+    aws_iam as iam,
 )
 from constructs import Construct
 
 length = 8
-SUFFIX = "".join(choices(string.ascii_letters + string.digits, k=length)).lower()
+SUFFIX = "dev-env-1"
 
 BUCKET_ID = "TestBucketForChatV2GDS"
 BUCKET_NAME = f"{BUCKET_ID.lower()}-{SUFFIX}"
@@ -58,10 +55,45 @@ class AgentCoreStack(Stack):
             ],
         )
 
+        access_auth = cognito.UserPool(self, "A2AAccess")
+
+        a2a_resource_server = access_auth.add_resource_server(
+            "A2AResourceServer",
+            identifier="a2a",
+            scopes=[
+                cognito.ResourceServerScope(
+                    scope_name="invoke",
+                    scope_description="Invoke the AgentCore Researcher",
+                )
+            ],
+        )
+
+        access_auth_client = cognito.UserPoolClient(
+            self,
+            "A2AClient",
+            user_pool=access_auth,
+            generate_secret=True,
+            o_auth=cognito.OAuthSettings(
+                flows=cognito.OAuthFlows(client_credentials=True),
+                scopes=[cognito.OAuthScope.custom("a2a/invoke")],
+            ),
+        )
+        access_auth_client.node.add_dependency(a2a_resource_server)
+
+        a2a_domain = access_auth.add_domain(
+            "A2ADomain",
+            cognito_domain=cognito.CognitoDomainOptions(
+                domain_prefix=f"a2a-researcher-{SUFFIX}"
+            ),
+        )
+
         researcher_runtime = agentcore_alpha.Runtime(
             self,
             "ResearcherRuntime",
             runtime_name="ResearcherA2AServer",
+            authorizer_configuration=agentcore_alpha.RuntimeAuthorizerConfiguration.using_cognito(
+                user_pool=access_auth, user_pool_clients=[access_auth_client]
+            ),
             agent_runtime_artifact=agentcore_alpha.AgentRuntimeArtifact.from_asset(
                 "agents/researcher"
             ),
@@ -95,6 +127,10 @@ class AgentCoreStack(Stack):
                 "CLIENT_SECRET": cognito_secret,
                 "MCP_URL": mcp_url,
                 "MEMORY_ID": shared_memory.memory_id,
+                "A2A_POOL_DOMAIN": a2a_domain.domain_name,
+                "A2A_POOL_ID": access_auth.user_pool_id,
+                "A2A_POOL_CLIENT": access_auth_client.user_pool_client_id,
+                "A2A_POOL_SECRET": access_auth_client.user_pool_client_secret.to_string(),
             },
         )
 
@@ -136,4 +172,4 @@ class AgentCoreStack(Stack):
             )
         )
 
-        s3.Bucket(self, BUCKET_ID, bucket_name=BUCKET_NAME)
+        # s3.Bucket(self, BUCKET_ID, bucket_name=BUCKET_NAME)
