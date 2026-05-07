@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class ToolCall(BaseModel):
-    tool_use_id: Optional[str]
+    tool_use_id: Optional[str] = None
     tool_name: str
     input: dict[str, Any]
 
@@ -12,11 +12,11 @@ class ToolCall(BaseModel):
 class ToolResult(BaseModel):
     tool_use_id: str
     tool_name: str
-    response_json: dict[str, Any]
+    response: str
 
 
 class UserTurn(BaseModel):
-    text: str
+    text: str = None
     tool_responses: Optional[List[ToolResult]] = None
 
 
@@ -25,20 +25,28 @@ class ModelTurn(BaseModel):
     tool_calls: Optional[List[ToolCall]] = None
     input_tokens: Optional[int] = None
     output_tokens: Optional[int] = None
+    latency: Optional[int] = None
 
 
 class PromptTestCase(BaseModel):
     id: str
     description: Optional[str] = None
-    user_turn: UserTurn
-    conversation_history: Optional[List[UserTurn | ModelTurn]] = None
-    actual_model_responses: Optional[List[ModelTurn]] = None
+    conversation_history: Optional[List[UserTurn | ModelTurn]]
+    actual_model_responses: Optional[List[ModelTurn]] = []
     expected_model_response: ModelTurn
     tests: List[str]
+
+
+class ToolDefinition(BaseModel):
+    tool_name: str
+    tool_description: str
+    input_schema: dict[str, Any]
+    required_inputs: List[str]
 
 
 class Prompt(BaseModel):
     id: str
     prompt_text: Optional[str] = None
     prompt_arn: Optional[str] = None
-    evals: Optional[List[PromptTestCase]] = None
+    model: str
+    tools: Optional[List[ToolDefinition]] = None
