@@ -33,7 +33,7 @@ class PromptTestCase(BaseModel):
     description: Optional[str] = None
     conversation_history: Optional[List[UserTurn | ModelTurn]]
     actual_model_responses: Optional[List[ModelTurn]] = []
-    expected_model_response: ModelTurn
+    expected_test_results: Optional[dict[str, Any]] = None
     tests: List[str]
 
 
@@ -47,6 +47,5 @@ class ToolDefinition(BaseModel):
 class Prompt(BaseModel):
     id: str
     prompt_text: Optional[str] = None
-    prompt_arn: Optional[str] = None
     model: str
     tools: Optional[List[ToolDefinition]] = None

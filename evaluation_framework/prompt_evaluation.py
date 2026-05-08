@@ -90,7 +90,7 @@ class PromptEvaluator:
         tool_spec = {
             "name": tool.tool_name,
             "description": tool.tool_description,
-            "input_schema": {
+            "inputSchema": {
                 "json": {
                     "type": "object",
                     "properties": tool.input_schema,
@@ -98,7 +98,7 @@ class PromptEvaluator:
                 }
             },
         }
-        return tool_spec
+        return {"toolSpec": tool_spec}
 
     @staticmethod
     def parse_conversation_history(
